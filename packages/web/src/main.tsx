@@ -12,10 +12,20 @@ bus.register('undo', () => console.log('undo'));
 function App() {
   const { videoRef, gesture } = useHandTracking();
   const [palette, setPalette] = useState(false);
+  const [prompt, setPrompt] = useState('');
 
   const handleCommand = (cmd: Command) => {
     bus.dispatch(cmd);
     setPalette(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const commands = await parsePrompt(prompt);
+    for (const cmd of commands) {
+      bus.dispatch(cmd);
+    }
+    setPrompt('');
   };
 
   return (
@@ -23,6 +33,13 @@ function App() {
       <video ref={videoRef} style={{ display: 'none' }} />
       <RadialPalette visible={palette} onSelect={handleCommand} />
       <div>Gesture: {gesture}</div>
+      <form onSubmit={handleSubmit}>
+        <input
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          placeholder="Enter command"
+        />
+      </form>
     </div>
   );
 }
