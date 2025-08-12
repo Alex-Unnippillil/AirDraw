@@ -1,18 +1,41 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-bus.register('setColor', async args => console.log('setColor', args));
-bus.register('undo', () => console.log('undo'));
+import { CommandBus } from '@airdraw/core';
+import { useHandTracking } from './hooks/useHandTracking';
+import RadialPalette from './components/RadialPalette';
+import { parsePrompt } from './ai/copilot';
+import type { AppCommand, AppCommands } from './commands';
 
-  const handleCommand = (cmd: AppCommand) => {
-    bus.dispatch(cmd);
+export const bus = new CommandBus<AppCommands>();
+
+export function App() {
+  const { videoRef, gesture } = useHandTracking();
+  const [prompt, setPrompt] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cmds = await parsePrompt(prompt);
+    for (const cmd of cmds) {
+      bus.dispatch(cmd);
+    }
+    setPrompt('');
   };
 
+  const handleSelect = (cmd: AppCommand) => {
+    bus.dispatch(cmd);
+  };
 
   return (
     <div>
       <video ref={videoRef} hidden />
-      <div>Gesture: {gesture}</div>
-
+      <form onSubmit={handleSubmit}>
+        <input
+          placeholder="prompt"
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+        />
+      </form>
+      {gesture === 'palette' && <RadialPalette onSelect={handleSelect} />}
     </div>
   );
 }
