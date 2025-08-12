@@ -3,7 +3,10 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { App, bus } from '../src/main';
+import { App } from '../src/main';
+import { CommandBusProvider } from '../src/context/CommandBusContext';
+import { CommandBus } from '@airdraw/core';
+import type { AppCommands } from '../src/commands';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 
 let mockGesture: string = 'idle';
@@ -22,23 +25,37 @@ describe('App', () => {
     vi.clearAllMocks();
     mockGesture = 'idle';
   });
-  it('shows palette only when gesture is palette', () => {
-    const { rerender } = render(<App />);
-    expect(screen.queryByText('Black')).toBeNull();
-    mockGesture = 'palette';
-    rerender(<App />);
-    expect(screen.queryByText('Black')).not.toBeNull();
-  });
-
-  it('dispatches commands from prompt', async () => {
-    (parsePrompt as any).mockResolvedValue([{ id: 'undo', args: {} }]);
-    const dispatchSpy = vi.spyOn(bus, 'dispatch');
-    render(<App />);
-    const input = screen.getByPlaceholderText('prompt');
-    fireEvent.change(input, { target: { value: 'undo' } });
-    fireEvent.submit(input.closest('form')!);
-    await waitFor(() => {
-      expect(dispatchSpy).toHaveBeenCalledWith({ id: 'undo', args: {} });
+    it('shows palette only when gesture is palette', () => {
+      const bus = new CommandBus<AppCommands>();
+      const { rerender } = render(
+        <CommandBusProvider bus={bus}>
+          <App />
+        </CommandBusProvider>
+      );
+      expect(screen.queryByText('Black')).toBeNull();
+      mockGesture = 'palette';
+      rerender(
+        <CommandBusProvider bus={bus}>
+          <App />
+        </CommandBusProvider>
+      );
+      expect(screen.queryByText('Black')).not.toBeNull();
     });
-  });
+
+    it('dispatches commands from prompt', async () => {
+      (parsePrompt as any).mockResolvedValue([{ id: 'undo', args: {} }]);
+      const bus = new CommandBus<AppCommands>();
+      const dispatchSpy = vi.spyOn(bus, 'dispatch');
+      render(
+        <CommandBusProvider bus={bus}>
+          <App />
+        </CommandBusProvider>
+      );
+      const input = screen.getByPlaceholderText('prompt');
+      fireEvent.change(input, { target: { value: 'undo' } });
+      fireEvent.submit(input.closest('form')!);
+      await waitFor(() => {
+        expect(dispatchSpy).toHaveBeenCalledWith({ id: 'undo', args: {} });
+      });
+    });
 });
