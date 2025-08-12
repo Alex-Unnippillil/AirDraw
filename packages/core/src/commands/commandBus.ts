@@ -1,24 +1,30 @@
-export interface Command {
-  id: string;
-  args: Record<string, any>;
+export type CommandMap = Record<string, unknown>;
+
+export interface Command<C extends CommandMap = CommandMap, K extends keyof C = keyof C> {
+  id: K;
+  args: C[K];
   dryRun?: boolean;
 }
 
-export type CommandHandler = (args: Record<string, any>) => Promise<void> | void;
+export type CommandHandler<Args> = (args: Args) => Promise<void> | void;
 
-export class CommandBus {
-  private handlers = new Map<string, CommandHandler>();
-  private undoStack: Command[] = [];
-  private redoStack: Command[] = [];
+export class CommandBus<C extends CommandMap = CommandMap> {
+  private handlers = new Map<keyof C | `undo:${string & keyof C}`, CommandHandler<unknown>>();
+  private undoStack: Command<C>[] = [];
+  private redoStack: Command<C>[] = [];
 
-  register(id: string, handler: CommandHandler) {
-    this.handlers.set(id, handler);
+  register<K extends keyof C>(id: K | `undo:${string & K}`, handler: CommandHandler<C[K]>) {
+    this.handlers.set(id, handler as CommandHandler<unknown>);
   }
 
-  async dispatch(cmd: Command) {
+  unregister<K extends keyof C>(id: K | `undo:${string & K}`) {
+    this.handlers.delete(id);
+  }
+
+  async dispatch<K extends keyof C>(cmd: Command<C, K>) {
     if (cmd.dryRun) return;
-    const handler = this.handlers.get(cmd.id);
-    if (!handler) throw new Error(`No handler for ${cmd.id}`);
+    const handler = this.handlers.get(cmd.id) as CommandHandler<C[K]> | undefined;
+    if (!handler) throw new Error(`No handler for ${String(cmd.id)}`);
     await handler(cmd.args);
     this.undoStack.push(cmd);
     this.redoStack = [];
@@ -27,14 +33,20 @@ export class CommandBus {
   undo() {
     const cmd = this.undoStack.pop();
     if (!cmd) return;
-    const handler = this.handlers.get(`undo:${cmd.id}`);
-    if (handler) handler(cmd.args);
-    this.redoStack.push(cmd);
+    const handler = this.handlers.get(`undo:${String(cmd.id)}` as `undo:${string & keyof C}`) as
+      | CommandHandler<C[keyof C]>
+      | undefined;
+    if (handler) {
+      handler(cmd.args as C[keyof C]);
+      this.redoStack.push(cmd);
+    } else {
+      this.undoStack.push(cmd);
+    }
   }
 
-  redo() {
+  async redo() {
     const cmd = this.redoStack.pop();
     if (!cmd) return;
-    this.dispatch(cmd);
+    await this.dispatch(cmd as Command<C, keyof C>);
   }
 }
