@@ -10,13 +10,17 @@ bus.register('setColor', async args => console.log('setColor', args));
 bus.register('undo', () => console.log('undo'));
 
 function App() {
-  const { videoRef, gesture } = useHandTracking();
+  const { videoRef, gesture, error } = useHandTracking();
   const [palette, setPalette] = useState(false);
 
   const handleCommand = (cmd: Command) => {
     bus.dispatch(cmd);
     setPalette(false);
   };
+
+  if (error) {
+    return <div>Camera error: {error.message}</div>;
+  }
 
   return (
     <div>
