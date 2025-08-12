@@ -1,15 +1,7 @@
 import React from 'react';
-import { Command } from '@airdraw/core';
+import { AppCommand } from '../commands';
 
-export interface PaletteItem {
-  label: string;
-  command: Command;
-}
 
-export interface RadialPaletteProps {
-  visible: boolean;
-  items: PaletteItem[];
-  onSelect(cmd: Command): void;
 }
 
 export function RadialPalette({ visible, items, onSelect }: RadialPaletteProps) {
