@@ -24,17 +24,17 @@ export class CommandBus {
     this.redoStack = [];
   }
 
-  undo() {
+  async undo(): Promise<void> {
     const cmd = this.undoStack.pop();
     if (!cmd) return;
     const handler = this.handlers.get(`undo:${cmd.id}`);
-    if (handler) handler(cmd.args);
+    if (handler) await handler(cmd.args);
     this.redoStack.push(cmd);
   }
 
-  redo() {
+  async redo(): Promise<void> {
     const cmd = this.redoStack.pop();
     if (!cmd) return;
-    this.dispatch(cmd);
+    await this.dispatch(cmd);
   }
 }
