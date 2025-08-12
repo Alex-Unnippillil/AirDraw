@@ -1,9 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { CommandBus, Command } from '../src/commands/commandBus';
 
-describe('CommandBus', () => {
-  it('dispatches and undoes commands', async () => {
-    const bus = new CommandBus();
+    let count = 0;
+    bus.register('inc', async () => { await Promise.resolve(); count++; });
+    bus.register('undo:inc', async () => { await Promise.resolve(); count--; });
+    await bus.dispatch({ id: 'inc', args: {} });
+    expect(count).toBe(1);
+    await bus.undo();
+    expect(count).toBe(0);
+    await bus.redo();
+    expect(count).toBe(1);
+
+  });
+
+  it('redos commands without losing handlers', async () => {
+    type Cmds = { inc: {} };
+    const bus = new CommandBus<Cmds>();
     let count = 0;
     bus.register('inc', () => { count++; });
     bus.register('undo:inc', () => { count--; });
@@ -11,5 +22,22 @@ describe('CommandBus', () => {
     expect(count).toBe(1);
     bus.undo();
     expect(count).toBe(0);
+    await bus.redo();
+    expect(count).toBe(1);
+    bus.undo();
+    expect(count).toBe(0);
+  });
+
+  it('restores undo state when no undo handler is registered', async () => {
+    type Cmds = { inc: {} };
+    const bus = new CommandBus<Cmds>();
+    let count = 0;
+    bus.register('inc', () => { count++; });
+    await bus.dispatch({ id: 'inc', args: {} });
+    expect(count).toBe(1);
+    bus.undo();
+    expect(count).toBe(1);
+    await bus.redo();
+    expect(count).toBe(1);
   });
 });
