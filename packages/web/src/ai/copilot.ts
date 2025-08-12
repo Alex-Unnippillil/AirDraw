@@ -1,5 +1,6 @@
 import type { AppCommand } from '../commands';
 
+
 // Naive prompt parser used for testing.
 export function parsePrompt(prompt: string): AppCommand[] {
   const text = prompt.toLowerCase();
@@ -12,5 +13,7 @@ export function parsePrompt(prompt: string): AppCommand[] {
   if (text.includes('black')) {
     return [{ id: 'setColor', args: { hex: '#000000' } }];
   }
+
   return [];
 }
+
