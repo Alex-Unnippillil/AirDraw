@@ -6,13 +6,18 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "echo 'build stub'",
-    "dev": "echo 'dev stub'",
+    "dev": "npm run dev -w @airdraw/web",
+    "build": "npm run build -w @airdraw/web",
+    "lint": "eslint . --ext ts,tsx,js,jsx",
+    "format": "prettier . --write",
     "test": "vitest run",
     "package": "echo 'electron package stub'"
   },
   "devDependencies": {
-
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
     "typescript": "^5.3.3",
     "vitest": "^0.34.6"
   }
