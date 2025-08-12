@@ -6,10 +6,13 @@
 npm install
 ```
 
-## Development
+## Web Workflow
+
+The `@airdraw/web` package is a React app powered by Vite.
 
 ```bash
-npm run dev           # start web dev server (Vite) in @airdraw/web
+npm run dev           # start the Vite dev server
+npm run build         # build the web app for production
 ```
 
 ## Lint
@@ -28,12 +31,6 @@ npm run format        # run Prettier
 
 ```bash
 npm test              # run vitest
-```
-
-## Build
-
-```bash
-npm run build         # build @airdraw/web
 ```
 
 ## Package (Electron stub)
