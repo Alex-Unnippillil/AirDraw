@@ -9,13 +9,7 @@ export class BrushEngine {
   private filterX: OneEuroFilter;
   private filterY: OneEuroFilter;
   private current?: BrushConfig;
-  private filterCfg: OneEuroConfig;
 
-  /**
-   * @param filterCfg Parameters for the internal OneEuro filters.
-   * Defaults: { minCutoff: 1.0, beta: 0.0, dcutoff: 1.0 }
-   */
-  constructor(filterCfg: OneEuroConfig = { minCutoff: 1.0, beta: 0.0, dcutoff: 1.0 }) {
     this.filterCfg = filterCfg;
     this.filterX = new OneEuroFilter(filterCfg);
     this.filterY = new OneEuroFilter(filterCfg);
@@ -26,8 +20,6 @@ export class BrushEngine {
     this.points = [];
   }
 
-  addPoint(p: Vec2, t: number) {
-    if (!this.current) throw new Error('brush not started');
     const x = this.filterX.filter(p.x, t);
     const y = this.filterY.filter(p.y, t);
     this.points.push({ x, y });

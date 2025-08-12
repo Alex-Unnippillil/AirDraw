@@ -7,4 +7,10 @@ describe('GestureFSM', () => {
     const g = fsm.update({ pinch: 0.9, fingers: 2 });
     expect(g).toBe('draw');
   });
+
+  it('supports custom thresholds', () => {
+    const fsm = new GestureFSM({ pinchThreshold: 0.5, fingerThreshold: 3 });
+    const g = fsm.update({ pinch: 0.6, fingers: 3 });
+    expect(g).toBe('draw');
+  });
 });
