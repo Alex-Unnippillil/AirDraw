@@ -1,23 +1,31 @@
-export interface Command {
-  id: string;
-  args: Record<string, any>;
+export interface Command<TId extends string = string, TArgs = unknown> {
+  id: TId;
+  args: TArgs;
   dryRun?: boolean;
 }
 
-export type CommandHandler = (args: Record<string, any>) => Promise<void> | void;
+export type CommandHandler<TArgs = unknown> = (
+  args: TArgs
+) => Promise<void> | void;
 
-export class CommandBus {
-  private handlers = new Map<string, CommandHandler>();
-  private undoStack: Command[] = [];
-  private redoStack: Command[] = [];
+export type CommandMap = Record<string, any>;
 
-  register(id: string, handler: CommandHandler) {
-    this.handlers.set(id, handler);
+export type CommandOf<T extends CommandMap> = {
+  [K in keyof T]: Command<K & string, T[K]>;
+}[keyof T];
+
+export class CommandBus<T extends CommandMap = CommandMap> {
+  private handlers = new Map<string, CommandHandler<any>>();
+  private undoStack: CommandOf<T>[] = [];
+  private redoStack: CommandOf<T>[] = [];
+
+  register<K extends keyof T>(id: K, handler: CommandHandler<T[K]>) {
+    this.handlers.set(id as string, handler as CommandHandler<any>);
   }
 
-  async dispatch(cmd: Command) {
+  async dispatch(cmd: CommandOf<T>) {
     if (cmd.dryRun) return;
-    const handler = this.handlers.get(cmd.id);
+    const handler = this.handlers.get(cmd.id as string);
     if (!handler) throw new Error(`No handler for ${cmd.id}`);
     await handler(cmd.args);
     this.undoStack.push(cmd);

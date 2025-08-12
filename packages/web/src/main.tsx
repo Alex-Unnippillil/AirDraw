@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useHandTracking } from './hooks/useHandTracking';
 import { RadialPalette } from './components/RadialPalette';
-import { CommandBus, Command } from '@airdraw/core';
+import { CommandBus } from '@airdraw/core';
 import { parsePrompt } from './ai/copilot';
+import { AppCommand, AppCommands } from './commands';
 
-export const bus = new CommandBus();
+
 bus.register('setColor', async args => console.log('setColor', args));
 bus.register('undo', () => console.log('undo'));
 
@@ -18,7 +19,7 @@ export function App() {
     setPalette(gesture === 'palette');
   }, [gesture]);
 
-  const handleCommand = (cmd: Command) => {
+  const handleCommand = (cmd: AppCommand) => {
     bus.dispatch(cmd);
     setPalette(false);
   };
