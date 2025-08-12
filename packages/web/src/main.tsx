@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { useHandTracking } from './hooks/useHandTracking';
 
 import { parsePrompt } from './ai/copilot';
-import { AppCommand, AppCommands } from './commands';
 
 
 bus.register('setColor', async args => console.log('setColor', args));
