@@ -4,62 +4,37 @@ export interface HandInput {
   pinch: number; // 0-1
   fingers: number; // number of extended fingers
 }
+type Listener<Args extends any[]> = (...args: Args) => void;
 
-export interface GestureFSMOptions {
-  drawPinch?: number;
-  drawMaxFingers?: number;
-  paletteFingers?: number;
-  fistFingers?: number;
+interface Emitter<Events extends Record<string, any[]>> {
+  on<E extends keyof Events>(event: E, listener: Listener<Events[E]>): () => void;
+  emit<E extends keyof Events>(event: E, ...args: Events[E]): void;
 }
 
-type ChangeHandler = (g: Gesture) => void;
+function createEmitter<Events extends Record<string, any[]>>(): Emitter<Events> {
+  const listeners: { [K in keyof Events]?: Listener<Events[K]>[] } = {};
+  return {
+    on(event, listener) {
+      (listeners[event] ||= []).push(listener);
+      return () => {
+        const arr = listeners[event];
+        if (!arr) return;
+        listeners[event] = arr.filter(l => l !== listener);
+      };
+    },
+    emit(event, ...args) {
+      listeners[event]?.forEach(l => l(...args));
+    },
+  };
+}
 
-export class GestureFSM {
-  private state: Gesture = 'idle';
-  private readonly drawPinch: number;
-  private readonly drawMaxFingers: number;
-  private readonly paletteFingers: number;
-  private readonly fistFingers: number;
-  private listeners = new Set<ChangeHandler>();
 
-  constructor(opts: GestureFSMOptions = {}) {
-    const {
-      drawPinch = 0.8,
-      drawMaxFingers = 2,
-      paletteFingers = 5,
-      fistFingers = 0,
-    } = opts;
-    this.drawPinch = drawPinch;
-    this.drawMaxFingers = drawMaxFingers;
-    this.paletteFingers = paletteFingers;
-    this.fistFingers = fistFingers;
-  }
 
-  onChange(fn: ChangeHandler) {
-    this.listeners.add(fn);
-  }
-
-  offChange(fn: ChangeHandler) {
-    this.listeners.delete(fn);
-  }
-
-  private emit(next: Gesture) {
-    for (const fn of this.listeners) fn(next);
-  }
-
-  reset() {
-    if (this.state !== 'idle') {
-      this.state = 'idle';
-      this.emit(this.state);
-    }
   }
 
   update(input: HandInput): Gesture {
     let next: Gesture = this.state;
-    if (input.pinch > this.drawPinch && input.fingers <= this.drawMaxFingers)
-      next = 'draw';
-    else if (input.fingers === this.paletteFingers) next = 'palette';
-    else if (input.fingers === this.fistFingers) next = 'fist';
+
     else next = 'idle';
 
     if (next !== this.state) {
