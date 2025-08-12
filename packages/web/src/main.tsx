@@ -1,33 +1,28 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { useHandTracking } from './hooks/useHandTracking';
-import { RadialPalette } from './components/RadialPalette';
-import { parsePrompt } from './ai/copilot';
-import type { AppCommand } from './commands';
-import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
+
+export const bus = new CommandBus<AppCommands>();
 
 export function App() {
-  const bus = useCommandBus();
   const { videoRef, gesture } = useHandTracking();
   const [prompt, setPrompt] = useState('');
 
-  const handleCommand = (cmd: AppCommand) => {
-    bus.dispatch(cmd);
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cmds = await parsePrompt(prompt);
-    cmds.forEach(handleCommand);
+    for (const cmd of cmds) {
+      bus.dispatch(cmd);
+    }
     setPrompt('');
+  };
+
+
   };
 
   return (
     <div>
       <video ref={videoRef} hidden />
-      <div>Gesture: {gesture}</div>
-      {gesture === 'palette' && <RadialPalette onSelect={handleCommand} />}
       <form onSubmit={handleSubmit}>
         <input
           placeholder="prompt"
@@ -35,6 +30,7 @@ export function App() {
           onChange={e => setPrompt(e.target.value)}
         />
       </form>
+
     </div>
   );
 }
