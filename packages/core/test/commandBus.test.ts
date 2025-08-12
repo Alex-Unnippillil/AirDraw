@@ -6,14 +6,17 @@ describe('CommandBus', () => {
     type Cmds = { inc: {} };
     const bus = new CommandBus<Cmds>();
     let count = 0;
-    bus.register('inc', async () => {
-      await Promise.resolve();
-      count++;
-    });
-    bus.register('undo:inc', async () => {
-      await Promise.resolve();
-      count--;
-    });
+    bus.register(
+      'inc',
+      async () => {
+        await Promise.resolve();
+        count++;
+      },
+      async () => {
+        await Promise.resolve();
+        count--;
+      }
+    );
     await bus.dispatch({ id: 'inc', args: {} });
     expect(count).toBe(1);
     await bus.undo();
@@ -26,12 +29,15 @@ describe('CommandBus', () => {
     type Cmds = { inc: {} };
     const bus = new CommandBus<Cmds>();
     let count = 0;
-    bus.register('inc', () => {
-      count++;
-    });
-    bus.register('undo:inc', () => {
-      count--;
-    });
+    bus.register(
+      'inc',
+      () => {
+        count++;
+      },
+      () => {
+        count--;
+      }
+    );
     await bus.dispatch({ id: 'inc', args: {} });
     expect(count).toBe(1);
     await bus.undo();

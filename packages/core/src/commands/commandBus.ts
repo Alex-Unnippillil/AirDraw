@@ -10,18 +10,28 @@ export type CommandOf<M extends Record<string, any>> = {
 }[keyof M];
 
 export class CommandBus<Cmds extends Record<string, any>> {
-  private handlers = new Map<string, CommandHandler<any>>();
+  private handlers = new Map<
+    string,
+    { do: CommandHandler<any>; undo?: CommandHandler<any> }
+  >();
   private undoStack: Array<Command<keyof Cmds & string, any>> = [];
   private redoStack: Array<Command<keyof Cmds & string, any>> = [];
 
-  register<ID extends string, Args>(id: ID, handler: CommandHandler<Args>) {
-    this.handlers.set(id, handler as CommandHandler<any>);
+  register<ID extends string, Args>(
+    id: ID,
+    handler: CommandHandler<Args>,
+    undo?: CommandHandler<Args>
+  ) {
+    this.handlers.set(id, {
+      do: handler as CommandHandler<any>,
+      ...(undo ? { undo: undo as CommandHandler<any> } : {}),
+    });
   }
 
   async dispatch<ID extends keyof Cmds>(cmd: Command<ID & string, Cmds[ID]>) {
-    const handler = this.handlers.get(cmd.id as string);
-    if (!handler) return;
-    await handler(cmd.args);
+    const entry = this.handlers.get(cmd.id as string);
+    if (!entry) return;
+    await entry.do(cmd.args);
     this.undoStack.push(cmd as Command<keyof Cmds & string, any>);
     this.redoStack = [];
   }
@@ -29,7 +39,8 @@ export class CommandBus<Cmds extends Record<string, any>> {
   async undo() {
     const cmd = this.undoStack.pop();
     if (!cmd) return;
-    const handler = this.handlers.get(`undo:${String(cmd.id)}`);
+    const entry = this.handlers.get(String(cmd.id));
+    const handler = entry?.undo;
     if (!handler) {
       // Restore state when there is no inverse handler
       this.undoStack.push(cmd);
@@ -42,7 +53,8 @@ export class CommandBus<Cmds extends Record<string, any>> {
   async redo() {
     const cmd = this.redoStack.pop();
     if (!cmd) return;
-    const handler = this.handlers.get(String(cmd.id));
+    const entry = this.handlers.get(String(cmd.id));
+    const handler = entry?.do;
     if (!handler) {
       // Restore state if redo handler is missing
       this.redoStack.push(cmd);
