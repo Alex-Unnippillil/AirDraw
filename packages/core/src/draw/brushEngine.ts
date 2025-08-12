@@ -18,6 +18,8 @@ export class BrushEngine {
   start(config: BrushConfig) {
     this.current = config;
     this.points = [];
+    this.filterX.reset();
+    this.filterY.reset();
   }
 
   addPoint(p: Vec2, t: number) {
