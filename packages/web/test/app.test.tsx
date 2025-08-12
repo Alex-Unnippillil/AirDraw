@@ -10,8 +10,9 @@ import type { AppCommands } from '../src/commands';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 
 let mockGesture: string = 'idle';
+let mockError: Error | null = null;
 vi.mock('../src/hooks/useHandTracking', () => ({
-  useHandTracking: () => ({ videoRef: { current: null }, gesture: mockGesture })
+  useHandTracking: () => ({ videoRef: { current: null }, gesture: mockGesture, error: mockError })
 }));
 
 vi.mock('../src/ai/copilot', () => ({
@@ -24,6 +25,7 @@ describe('App', () => {
     cleanup();
     vi.clearAllMocks();
     mockGesture = 'idle';
+    mockError = null;
   });
     it('shows palette only when gesture is palette', () => {
       const bus = new CommandBus<AppCommands>();
@@ -57,5 +59,16 @@ describe('App', () => {
       await waitFor(() => {
         expect(dispatchSpy).toHaveBeenCalledWith({ id: 'undo', args: {} });
       });
+    });
+
+    it('renders error from hand tracking', () => {
+      const bus = new CommandBus<AppCommands>();
+      mockError = new Error('camera denied');
+      render(
+        <CommandBusProvider bus={bus}>
+          <App />
+        </CommandBusProvider>
+      );
+      expect(screen.getByRole('alert').textContent).toContain('camera denied');
     });
 });
