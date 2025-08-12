@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/core",
+    "packages/server",
+    "packages/web"
   ],
   "scripts": {
     "dev": "npm run dev -w @airdraw/web",
