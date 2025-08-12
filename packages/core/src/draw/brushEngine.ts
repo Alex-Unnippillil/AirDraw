@@ -9,8 +9,10 @@ export class BrushEngine {
   private filterX: OneEuroFilter;
   private filterY: OneEuroFilter;
   private current?: BrushConfig;
+  private filterCfg: { minCutoff: number; beta: number; dcutoff: number };
 
   constructor(filterCfg = { minCutoff: 1.0, beta: 0.0, dcutoff: 1.0 }) {
+    this.filterCfg = filterCfg;
     this.filterX = new OneEuroFilter(filterCfg);
     this.filterY = new OneEuroFilter(filterCfg);
   }
@@ -20,7 +22,7 @@ export class BrushEngine {
     this.points = [];
   }
 
-  addPoint(p: Vec2, t: number) {
+  addPoint(p: Vec2, t = performance.now()) {
     const x = this.filterX.filter(p.x, t);
     const y = this.filterY.filter(p.y, t);
     this.points.push({ x, y });
@@ -32,5 +34,12 @@ export class BrushEngine {
     this.current = undefined;
     this.points = [];
     return stroke;
+  }
+
+  reset() {
+    this.filterX = new OneEuroFilter(this.filterCfg);
+    this.filterY = new OneEuroFilter(this.filterCfg);
+    this.points = [];
+    this.current = undefined;
   }
 }
