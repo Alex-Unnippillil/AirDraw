@@ -12,7 +12,7 @@
     this.redoStack = [];
   }
 
-  async undo() {
+
     const cmd = this.undoStack.pop();
     if (!cmd) return;
     const handler = this.handlers.get(`undo:${cmd.id}`);
@@ -20,7 +20,6 @@
     this.redoStack.push(cmd);
   }
 
-  async redo() {
     const cmd = this.redoStack.pop();
     if (!cmd) return;
     await this.dispatch(cmd);
