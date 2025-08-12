@@ -2,10 +2,13 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { GestureFSM } from '../../core/src/vision/gestureFsm';
+import { GestureFSM } from '@airdraw/core';
 
 vi.mock('@mediapipe/hands', () => ({ Hands: vi.fn() }));
-vi.mock('@airdraw/core', () => ({ GestureFSM }));
+vi.mock('@airdraw/core', async () => {
+  const actual = await vi.importActual<typeof import('@airdraw/core')>('@airdraw/core');
+  return { GestureFSM: actual.GestureFSM };
+});
 
 import { Hands } from '@mediapipe/hands';
 const HandsMock = Hands as unknown as any;
