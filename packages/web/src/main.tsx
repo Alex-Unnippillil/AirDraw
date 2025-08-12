@@ -10,8 +10,7 @@ import { AppCommand, AppCommands } from './commands';
 bus.register('setColor', async args => console.log('setColor', args));
 bus.register('undo', () => console.log('undo'));
 
-export function App() {
-  const { videoRef, gesture } = useHandTracking();
+
   const [palette, setPalette] = useState(false);
   const [prompt, setPrompt] = useState('');
 
@@ -24,12 +23,7 @@ export function App() {
     setPalette(false);
   };
 
-  const handlePrompt = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const cmds = await parsePrompt(prompt);
-    cmds.forEach(cmd => bus.dispatch(cmd));
-    setPrompt('');
-  };
+
 
   return (
     <div>
