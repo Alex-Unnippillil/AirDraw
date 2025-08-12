@@ -9,18 +9,19 @@ export function useHandTracking() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    const off = fsmRef.current.on('change', setGesture);
     navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
       video.srcObject = stream;
       video.play();
       const loop = () => {
         // Placeholder: real implementation would run model here
         const input: HandInput = { pinch: 0, fingers: 5 };
-        const g = fsmRef.current.update(input);
-        setGesture(g);
+        fsmRef.current.update(input);
         requestAnimationFrame(loop);
       };
       loop();
     }).catch(err => console.warn('camera error', err));
+    return () => off();
   }, []);
 
   return { videoRef, gesture };
