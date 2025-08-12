@@ -4,6 +4,7 @@ export interface HandInput {
   pinch: number; // 0-1
   fingers: number; // number of extended fingers
 }
+
 type Listener<Args extends any[]> = (...args: Args) => void;
 
 interface Emitter<Events extends Record<string, any[]>> {
@@ -24,23 +25,71 @@ function createEmitter<Events extends Record<string, any[]>>(): Emitter<Events> 
     },
     emit(event, ...args) {
       listeners[event]?.forEach(l => l(...args));
-    },
+    }
   };
 }
 
+interface Options {
+  drawPinch: number;
+  drawMaxFingers: number;
+  paletteMinFingers: number;
+  fistMaxFingers: number;
+}
 
+type Events = { change: [Gesture] };
 
+export class GestureFSM {
+  private emitter = createEmitter<Events>();
+  private offMap = new Map<Listener<[Gesture]>, () => void>();
+  private opts: Options;
+  public state: Gesture = 'idle';
+
+  constructor(opts: Partial<Options & { pinchThreshold: number; fingerThreshold: number }> = {}) {
+    const drawPinch = opts.drawPinch ?? opts.pinchThreshold ?? 0.8;
+    const drawMaxFingers = opts.drawMaxFingers ?? opts.fingerThreshold ?? 2;
+    const paletteMinFingers = opts.paletteMinFingers ?? 4;
+    const fistMaxFingers = opts.fistMaxFingers ?? 0;
+    this.opts = { drawPinch, drawMaxFingers, paletteMinFingers, fistMaxFingers };
+  }
+
+  on(event: 'change', listener: Listener<[Gesture]>) {
+    return this.emitter.on(event, listener);
+  }
+
+  onChange(listener: Listener<[Gesture]>) {
+    const off = this.emitter.on('change', listener);
+    this.offMap.set(listener, off);
+  }
+
+  offChange(listener: Listener<[Gesture]>) {
+    const off = this.offMap.get(listener);
+    off?.();
+    this.offMap.delete(listener);
+  }
+
+  reset() {
+    this.state = 'idle';
+    this.emitter.emit('change', this.state);
   }
 
   update(input: HandInput): Gesture {
-    let next: Gesture = this.state;
+    let next: Gesture;
 
-    else next = 'idle';
+    if (input.fingers <= this.opts.fistMaxFingers) {
+      next = 'fist';
+    } else if (input.pinch >= this.opts.drawPinch && input.fingers <= this.opts.drawMaxFingers) {
+      next = 'draw';
+    } else if (input.fingers >= this.opts.paletteMinFingers) {
+      next = 'palette';
+    } else {
+      next = 'idle';
+    }
 
     if (next !== this.state) {
       this.state = next;
-      this.emit(next);
+      this.emitter.emit('change', next);
     }
     return this.state;
   }
 }
+
