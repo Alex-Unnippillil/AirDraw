@@ -29,22 +29,17 @@ function createEmitter<Events extends Record<string, any[]>>(): Emitter<Events> 
 }
 
 
-};
 
-export class GestureFSM {
-  private state: Gesture = 'idle';
   }
 
   update(input: HandInput): Gesture {
     let next: Gesture = this.state;
-    if (input.pinch > this.config.pinchThreshold && input.fingers <= this.config.fingerThreshold) next = 'draw';
-    else if (input.fingers === 5) next = 'palette';
-    else if (input.fingers === 0) next = 'fist';
+
     else next = 'idle';
 
     if (next !== this.state) {
       this.state = next;
-      this.emit('change', next);
+      this.emit(next);
     }
     return this.state;
   }
