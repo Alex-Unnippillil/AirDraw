@@ -1,37 +1,52 @@
 import { describe, it, expect } from 'vitest';
-import { GestureFSM, Gesture } from '../src/vision/gestureFsm';
+import { GestureFSM } from '../src/vision/gestureFsm';
 
-describe('GestureFSM', () => {
-  it('emits change event for draw gesture', () => {
+describe('GestureFSM transitions', () => {
+  it('transitions idle -> draw and emits event', () => {
     const fsm = new GestureFSM();
-    let emitted: Gesture | undefined;
-    fsm.on('change', g => { emitted = g; });
-    fsm.update({ pinch: 0.9, fingers: 2 });
-    expect(emitted).toBe('draw');
-  });
-
-  it('supports custom thresholds', () => {
-    const fsm = new GestureFSM({ pinchThreshold: 0.5, fingerThreshold: 3 });
-    const g = fsm.update({ pinch: 0.6, fingers: 3 });
+    let emitted = false;
+    fsm.on('draw', () => {
+      emitted = true;
+    });
+    const g = fsm.update({ pinch: 0.9, fingers: 1 });
     expect(g).toBe('draw');
+    expect(emitted).toBe(true);
   });
 
-  it('uses custom thresholds', () => {
-    const fsm = new GestureFSM({ drawPinch: 0.5, drawMaxFingers: 3 });
-    const g = fsm.update({ pinch: 0.6, fingers: 3 });
-    expect(g).toBe('draw');
-  });
-
-  it('detaches change handler', () => {
+  it('transitions draw -> palette and emits event', () => {
     const fsm = new GestureFSM();
-    let calls = 0;
-    const handler = () => {
-      calls++;
-    };
-    fsm.onChange(handler);
-    fsm.update({ pinch: 0.9, fingers: 2 });
-    fsm.offChange(handler);
-    fsm.reset();
-    expect(calls).toBe(1);
+    fsm.update({ pinch: 0.9, fingers: 1 }); // move to draw first
+    let emitted = false;
+    fsm.on('palette', () => {
+      emitted = true;
+    });
+    const g = fsm.update({ pinch: 0, fingers: 5 });
+    expect(g).toBe('palette');
+    expect(emitted).toBe(true);
+  });
+
+  it('transitions palette -> fist and emits event', () => {
+    const fsm = new GestureFSM();
+    fsm.update({ pinch: 0, fingers: 5 }); // move to palette first
+    let emitted = false;
+    fsm.on('fist', () => {
+      emitted = true;
+    });
+    const g = fsm.update({ pinch: 0, fingers: 0 });
+    expect(g).toBe('fist');
+    expect(emitted).toBe(true);
+  });
+
+  it('transitions fist -> idle and emits event', () => {
+    const fsm = new GestureFSM();
+    fsm.update({ pinch: 0, fingers: 0 }); // move to fist first
+    let emitted = false;
+    fsm.on('idle', () => {
+      emitted = true;
+    });
+    const g = fsm.update({ pinch: 0, fingers: 2 });
+    expect(g).toBe('idle');
+    expect(emitted).toBe(true);
   });
 });
+
