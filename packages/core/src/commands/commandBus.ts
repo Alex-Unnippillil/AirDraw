@@ -5,6 +5,10 @@ export type Command<ID extends string, Args> = {
   args: Args;
 };
 
+export type CommandOf<M extends Record<string, any>> = {
+  [K in keyof M]: { id: K; args: M[K] };
+}[keyof M];
+
 export class CommandBus<Cmds extends Record<string, any>> {
   private handlers = new Map<string, CommandHandler<any>>();
   private undoStack: Array<Command<keyof Cmds & string, any>> = [];
