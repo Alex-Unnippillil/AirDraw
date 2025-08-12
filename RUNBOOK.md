@@ -15,13 +15,13 @@ npm run dev           # start web dev server (Vite) in @airdraw/web
 ## Lint
 
 ```bash
-npm run lint          # run ESLint
+npm run lint          # run ESLint across all packages
 ```
 
 ## Format
 
 ```bash
-npm run format        # run Prettier
+npm run format        # format with Prettier across all packages
 ```
 
 ## Tests
