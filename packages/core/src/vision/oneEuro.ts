@@ -9,6 +9,11 @@ export class OneEuroFilter {
   private dPrev?: number;
   constructor(private config: OneEuroConfig) {}
 
+  reset() {
+    this.prev = undefined;
+    this.dPrev = undefined;
+  }
+
   private alpha(t_e: number, cutoff: number) {
     const tau = 1 / (2 * Math.PI * cutoff);
     return 1 / (1 + tau / t_e);
