@@ -25,8 +25,7 @@ export function useHandTracking() {
   const [error, setError] = useState<Error | null>(null);
 
   const fsmRef = useRef(new GestureFSM());
-  const frameRef = useRef<number>();
-  const streamRef = useRef<MediaStream | null>(null);
+
 
   useEffect(() => {
     const video = videoRef.current;
