@@ -1,21 +1,21 @@
-export interface Command {
+export interface Command<TArgs = Record<string, unknown>> {
   id: string;
-  args: Record<string, any>;
+  args: TArgs;
   dryRun?: boolean;
 }
 
-export type CommandHandler = (args: Record<string, any>) => Promise<void> | void;
+export type CommandHandler<TArgs> = (args: TArgs) => Promise<void> | void;
 
-export class CommandBus {
-  private handlers = new Map<string, CommandHandler>();
-  private undoStack: Command[] = [];
-  private redoStack: Command[] = [];
+export class CommandBus<TArgs = Record<string, unknown>> {
+  private handlers = new Map<string, CommandHandler<TArgs>>();
+  private undoStack: Command<TArgs>[] = [];
+  private redoStack: Command<TArgs>[] = [];
 
-  register(id: string, handler: CommandHandler) {
+  register(id: string, handler: CommandHandler<TArgs>) {
     this.handlers.set(id, handler);
   }
 
-  async dispatch(cmd: Command) {
+  async dispatch(cmd: Command<TArgs>) {
     if (cmd.dryRun) return;
     const handler = this.handlers.get(cmd.id);
     if (!handler) throw new Error(`No handler for ${cmd.id}`);
@@ -24,17 +24,17 @@ export class CommandBus {
     this.redoStack = [];
   }
 
-  undo() {
+  async undo() {
     const cmd = this.undoStack.pop();
     if (!cmd) return;
     const handler = this.handlers.get(`undo:${cmd.id}`);
-    if (handler) handler(cmd.args);
+    if (handler) await handler(cmd.args);
     this.redoStack.push(cmd);
   }
 
-  redo() {
+  async redo() {
     const cmd = this.redoStack.pop();
     if (!cmd) return;
-    this.dispatch(cmd);
+    await this.dispatch(cmd);
   }
 }
