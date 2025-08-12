@@ -2,7 +2,17 @@
   "name": "@airdraw/web",
   "version": "0.1.0",
   "main": "src/main.tsx",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
   "dependencies": {
-    "@mediapipe/hands": "^0.4.1675469240"
+    "@mediapipe/hands": "^0.4.1675469240",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "vite": "^5.1.0",
+    "@vitejs/plugin-react": "^4.2.0"
   }
 }
