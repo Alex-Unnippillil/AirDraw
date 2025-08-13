@@ -43,6 +43,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
     let hands: any;
     let stream: MediaStream | null = null;
     let cleanupMouse = () => {};
+    let lastTwoX: number | null = null;
 
     const setupMouse = () => {
       const down = () => setGesture('draw');
@@ -99,6 +100,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
 
         hands.onResults(results => {
           if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+            lastTwoX = null;
             setGesture(fsmRef.current.update({ pinch: 0, fingers: 0 }));
             return;
           }
@@ -107,6 +109,18 @@ export function useHandTracking(config?: HandTrackingConfig) {
             pinch: calcPinch(lm),
             fingers: countFingers(lm)
           };
+          if (input.fingers === 2) {
+            const avgX = (lm[8].x + lm[12].x) / 2;
+            if (lastTwoX !== null) {
+              const dx = avgX - lastTwoX;
+              if (Math.abs(dx) > 0.2) {
+                input.swipe = dx < 0 ? 'left' : 'right';
+              }
+            }
+            lastTwoX = avgX;
+          } else {
+            lastTwoX = null;
+          }
           const g = fsmRef.current.update(input);
           setGesture(g);
         });
