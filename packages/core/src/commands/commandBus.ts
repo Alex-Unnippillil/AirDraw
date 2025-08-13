@@ -26,14 +26,21 @@ export class CommandBus<Cmds extends Record<string, any>> {
       do: handler as CommandHandler<any>,
       ...(undo ? { undo: undo as CommandHandler<any> } : {}),
     });
+    return () => {
+      this.handlers.delete(id);
+    };
   }
 
   async dispatch<ID extends keyof Cmds>(cmd: Command<ID & string, Cmds[ID]>) {
     const entry = this.handlers.get(cmd.id as string);
     if (!entry) return;
-    await entry.do(cmd.args);
-    this.undoStack.push(cmd as Command<keyof Cmds & string, any>);
-    this.redoStack = [];
+    try {
+      await entry.do(cmd.args);
+      this.undoStack.push(cmd as Command<keyof Cmds & string, any>);
+      this.redoStack = [];
+    } catch (err) {
+      throw err;
+    }
   }
 
   async undo() {
@@ -46,8 +53,13 @@ export class CommandBus<Cmds extends Record<string, any>> {
       this.undoStack.push(cmd);
       return;
     }
-    await handler(cmd.args);
-    this.redoStack.push(cmd);
+    try {
+      await handler(cmd.args);
+      this.redoStack.push(cmd);
+    } catch (err) {
+      this.undoStack.push(cmd);
+      throw err;
+    }
   }
 
   async redo() {
@@ -60,7 +72,12 @@ export class CommandBus<Cmds extends Record<string, any>> {
       this.redoStack.push(cmd);
       return;
     }
-    await handler(cmd.args);
-    this.undoStack.push(cmd);
+    try {
+      await handler(cmd.args);
+      this.undoStack.push(cmd);
+    } catch (err) {
+      this.redoStack.push(cmd);
+      throw err;
+    }
   }
 }
