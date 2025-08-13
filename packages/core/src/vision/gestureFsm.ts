@@ -1,8 +1,15 @@
-export type Gesture = 'idle' | 'draw' | 'palette' | 'fist';
+export type Gesture =
+  | 'idle'
+  | 'draw'
+  | 'palette'
+  | 'fist'
+  | 'swipeLeft'
+  | 'swipeRight';
 
 export interface HandInput {
   pinch: number; // 0-1
   fingers: number; // number of extended fingers
+  swipe?: 'left' | 'right' | null;
 }
 
 type Listener<Args extends any[]> = (...args: Args) => void;
@@ -75,7 +82,11 @@ export class GestureFSM {
   update(input: HandInput): Gesture {
     let next: Gesture;
 
-    if (input.fingers <= this.opts.fistMaxFingers) {
+    if (input.swipe === 'left') {
+      next = 'swipeLeft';
+    } else if (input.swipe === 'right') {
+      next = 'swipeRight';
+    } else if (input.fingers <= this.opts.fistMaxFingers) {
       next = 'fist';
     } else if (input.pinch >= this.opts.drawPinch && input.fingers <= this.opts.drawMaxFingers) {
       next = 'draw';
