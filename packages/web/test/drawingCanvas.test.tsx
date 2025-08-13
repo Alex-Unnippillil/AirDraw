@@ -7,7 +7,18 @@ import { CommandBus } from '@airdraw/core';
 import { CommandBusProvider } from '../src/context/CommandBusContext';
 import type { AppCommands } from '../src/commands';
 import { App } from '../src/main';
-import { afterEach, describe, it, vi, expect } from 'vitest';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
+import { afterEach, describe, it, vi, expect, beforeAll } from 'vitest';
+
+beforeAll(() => {
+  (HTMLCanvasElement.prototype as any).getContext = vi.fn(() => ({
+    clearRect: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+  }));
+});
 
 let mockGesture = 'draw';
 
@@ -19,13 +30,16 @@ describe('DrawingCanvas integration', () => {
   afterEach(() => {
     cleanup();
     mockGesture = 'draw';
+    localStorage.clear();
   });
 
   it('applies color changes to new strokes', async () => {
     const bus = new CommandBus<AppCommands>();
     render(
       <CommandBusProvider bus={bus}>
-        <App />
+        <PrivacyProvider>
+          <App />
+        </PrivacyProvider>
       </CommandBusProvider>
     );
     const canvas = screen.getByTestId('drawing-canvas');
@@ -57,7 +71,9 @@ describe('DrawingCanvas integration', () => {
     const bus = new CommandBus<AppCommands>();
     render(
       <CommandBusProvider bus={bus}>
-        <App />
+        <PrivacyProvider>
+          <App />
+        </PrivacyProvider>
       </CommandBusProvider>
     );
     const canvas = screen.getByTestId('drawing-canvas');

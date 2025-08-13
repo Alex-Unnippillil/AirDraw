@@ -5,9 +5,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { App } from '../src/main';
 import { CommandBusProvider } from '../src/context/CommandBusContext';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 import { CommandBus } from '@airdraw/core';
 import type { AppCommands } from '../src/commands';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeAll } from 'vitest';
 
 let mockGesture: string = 'idle';
 let mockError: Error | null = null;
@@ -20,25 +21,40 @@ vi.mock('../src/ai/copilot', () => ({
 }));
 import { parsePrompt } from '../src/ai/copilot';
 
+beforeAll(() => {
+  (HTMLCanvasElement.prototype as any).getContext = vi.fn(() => ({
+    clearRect: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn()
+  }));
+});
+
 describe('App', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
     mockGesture = 'idle';
     mockError = null;
+    localStorage.clear();
   });
     it('shows palette only when gesture is palette', () => {
       const bus = new CommandBus<AppCommands>();
       const { rerender } = render(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
       expect(screen.queryByText('Black')).toBeNull();
       mockGesture = 'palette';
       rerender(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
       expect(screen.queryByText('Black')).not.toBeNull();
@@ -50,9 +66,12 @@ describe('App', () => {
       const dispatchSpy = vi.spyOn(bus, 'dispatch');
       render(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
+      fireEvent.keyDown(window, { key: ' ', code: 'Space' });
       const input = screen.getByPlaceholderText('prompt');
       fireEvent.change(input, { target: { value: 'undo' } });
       fireEvent.submit(input.closest('form')!);
@@ -66,7 +85,9 @@ describe('App', () => {
       mockError = new Error('camera denied');
       render(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
       expect(screen.getByRole('alert').textContent).toContain('camera denied');
