@@ -21,14 +21,17 @@ export class CommandBus<Cmds extends Record<string, any>> {
     id: ID,
     handler: CommandHandler<Args>,
     undo?: CommandHandler<Args>
-  ) {
+  ): () => void {
     this.handlers.set(id, {
       do: handler as CommandHandler<any>,
       ...(undo ? { undo: undo as CommandHandler<any> } : {}),
     });
-    return () => {
+
+    const unsubscribe = () => {
       this.handlers.delete(id);
     };
+
+    return unsubscribe;
   }
 
   async dispatch<ID extends keyof Cmds>(cmd: Command<ID & string, Cmds[ID]>) {

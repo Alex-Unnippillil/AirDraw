@@ -72,6 +72,8 @@ describe('CommandBus', () => {
     });
     unsubscribe();
     await bus.dispatch({ id: 'inc', args: {} });
+    await bus.undo();
+    await bus.redo();
     expect(count).toBe(0);
   });
 
