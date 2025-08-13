@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import RadialPalette from './components/RadialPalette';
+import { useHandTracking } from './hooks/useHandTracking';
+import { useCommandBus, CommandBusProvider } from './context/CommandBusContext';
+import type { AppCommand } from './commands';
+import { parsePrompt } from './ai/copilot';
 
+gesture, error } = useHandTracking();
 
-export function App() {
-  const { videoRef, gesture, error } = useHandTracking();
   const bus = useCommandBus();
   const [prompt, setPrompt] = useState('');
 
@@ -17,11 +21,6 @@ export function App() {
     setPrompt('');
   };
 
-
-  };
-
-  return (
-    <div>
 
       <form onSubmit={handleSubmit}>
         <input
