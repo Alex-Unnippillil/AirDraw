@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { GestureFSM, HandInput, Gesture } from '@airdraw/core';
+import { usePrivacy } from '../context/PrivacyContext';
 
 type Landmark = { x: number; y: number };
 
@@ -27,11 +28,13 @@ export function useHandTracking(config?: HandTrackingConfig) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [gesture, setGesture] = useState<Gesture>('idle');
   const [error, setError] = useState<Error | null>(null);
+  const { enabled } = usePrivacy();
 
   const fsmRef = useRef(new GestureFSM());
   const stopRef = useRef<() => void>(() => {});
 
   useEffect(() => {
+    if (enabled) return;
     const video = videoRef.current;
     if (!video) return;
 
@@ -130,7 +133,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
     start();
 
     return stop;
-  }, [config?.baseUrl]);
+  }, [config?.baseUrl, enabled]);
 
   return { videoRef, gesture, error, stop: stopRef.current };
 }
