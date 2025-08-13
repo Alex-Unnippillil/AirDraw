@@ -23,7 +23,14 @@ export function PrivacyProvider({ children, initialEnabled = false }: ProviderPr
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      if (
+        e.code === 'Space' &&
+        e.target instanceof HTMLElement &&
+        !(
+          e.target.matches('input, textarea, select, button, [tabindex]:not([tabindex="-1"])') ||
+          e.target.isContentEditable
+        )
+      ) {
         e.preventDefault();
         toggle();
       }
