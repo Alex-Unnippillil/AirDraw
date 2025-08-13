@@ -1,34 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
-import RadialPalette from './components/RadialPalette';
-import { useHandTracking } from './hooks/useHandTracking';
-import { useCommandBus, CommandBusProvider } from './context/CommandBusContext';
+
 import type { AppCommand } from './commands';
 import { parsePrompt } from './ai/copilot';
+import { loadState, saveState } from './storage/indexedDb';
 
 export function App() {
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const [color, setColor] = useState('#000000');
-  const { videoRef, gesture, error } = useHandTracking();
+
   const bus = useCommandBus();
   const [prompt, setPrompt] = useState('');
+  const [color, setColor] = useState('#000000');
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
 
-  useEffect(() => {
-    const unsubColor = bus.register('setColor', ({ hex }: { hex: string }) => {
-      setColor(hex);
-    });
-    const unsubUndo = bus.register('undo', () => {
-      setStrokes(prev => prev.slice(0, -1));
-    });
-    return () => {
-      unsubColor();
-      unsubUndo();
-    };
-  }, [bus]);
 
-  const handleStrokeComplete = (stroke: Stroke) => {
-    setStrokes(prev => [...prev, stroke]);
+
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,16 +29,11 @@ export function App() {
     await bus.dispatch(cmd as AppCommand);
   };
 
-  return (
-    <div>
-      <video ref={videoRef} style={{ display: 'none' }} />
       <DrawingCanvas
         gesture={gesture}
         color={color}
         strokes={strokes}
-        onStrokeComplete={handleStrokeComplete}
-      />
-      {gesture === 'palette' && <RadialPalette onSelect={handlePaletteSelect} />}
+
       <form onSubmit={handleSubmit}>
         <input
           placeholder="prompt"
@@ -70,9 +50,11 @@ export function App() {
 const el = document.getElementById('root');
 if (el) {
   createRoot(el).render(
-    <CommandBusProvider>
-      <App />
-    </CommandBusProvider>
+    <PrivacyProvider>
+      <CommandBusProvider>
+        <App />
+      </CommandBusProvider>
+    </PrivacyProvider>
   );
 }
 
