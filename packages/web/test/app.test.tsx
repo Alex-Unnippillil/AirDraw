@@ -1,6 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
+import 'fake-indexeddb/auto';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { App } from '../src/main';
@@ -8,6 +9,9 @@ import { CommandBusProvider } from '../src/context/CommandBusContext';
 import { CommandBus } from '@airdraw/core';
 import type { AppCommands } from '../src/commands';
 import { afterEach, describe, it, expect, vi } from 'vitest';
+
+const mockCtx = { clearRect: () => {}, beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {} };
+(HTMLCanvasElement.prototype as any).getContext = () => mockCtx;
 
 let mockGesture: string = 'idle';
 let mockError: Error | null = null;
