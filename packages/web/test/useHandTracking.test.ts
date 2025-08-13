@@ -17,6 +17,7 @@ import { Hands } from '@mediapipe/hands';
 const HandsMock = Hands as unknown as any;
 
 import { useHandTracking } from '../src/hooks/useHandTracking';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 
 describe('useHandTracking', () => {
   afterEach(() => {
@@ -55,7 +56,10 @@ describe('useHandTracking', () => {
 
     let renderer: TestRenderer.ReactTestRenderer;
     await act(async () => {
-      renderer = TestRenderer.create(React.createElement(TestComponent));
+      renderer = TestRenderer.create(React.createElement(PrivacyProvider, null, React.createElement(TestComponent)));
+    });
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
     });
 
     await act(async () => {
@@ -102,9 +106,11 @@ describe('useHandTracking', () => {
 
     let renderer: TestRenderer.ReactTestRenderer;
     await act(async () => {
-      renderer = TestRenderer.create(React.createElement(TestComponent));
+      renderer = TestRenderer.create(React.createElement(PrivacyProvider, null, React.createElement(TestComponent)));
     });
-
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
+    });
     await act(async () => { resolveStream(stream); });
     await act(async () => {});
 
@@ -156,7 +162,10 @@ describe('useHandTracking', () => {
     }
 
     await act(async () => {
-      TestRenderer.create(React.createElement(TestComponent));
+      TestRenderer.create(React.createElement(PrivacyProvider, null, React.createElement(TestComponent)));
+    });
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
     });
 
     // allow async catch to run
