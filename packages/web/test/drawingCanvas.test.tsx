@@ -5,6 +5,7 @@ import React from 'react';
 import { render, fireEvent, screen, waitFor, cleanup } from '@testing-library/react';
 import { CommandBus } from '@airdraw/core';
 import { CommandBusProvider } from '../src/context/CommandBusContext';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 import type { AppCommands } from '../src/commands';
 import { App } from '../src/main';
 import { afterEach, describe, it, vi, expect } from 'vitest';
@@ -14,6 +15,18 @@ let mockGesture = 'draw';
 vi.mock('../src/hooks/useHandTracking', () => ({
   useHandTracking: () => ({ videoRef: { current: null }, gesture: mockGesture, error: null })
 }));
+
+(HTMLCanvasElement.prototype as any).getContext = () => ({
+  clearRect: () => {},
+  beginPath: () => {},
+  moveTo: () => {},
+  lineTo: () => {},
+  stroke: () => {},
+  closePath: () => {},
+  lineJoin: '',
+  strokeStyle: '',
+  lineWidth: 0
+});
 
 describe('DrawingCanvas integration', () => {
   afterEach(() => {
@@ -25,7 +38,9 @@ describe('DrawingCanvas integration', () => {
     const bus = new CommandBus<AppCommands>();
     render(
       <CommandBusProvider bus={bus}>
-        <App />
+        <PrivacyProvider>
+          <App />
+        </PrivacyProvider>
       </CommandBusProvider>
     );
     const canvas = screen.getByTestId('drawing-canvas');
@@ -57,7 +72,9 @@ describe('DrawingCanvas integration', () => {
     const bus = new CommandBus<AppCommands>();
     render(
       <CommandBusProvider bus={bus}>
-        <App />
+        <PrivacyProvider>
+          <App />
+        </PrivacyProvider>
       </CommandBusProvider>
     );
     const canvas = screen.getByTestId('drawing-canvas');
