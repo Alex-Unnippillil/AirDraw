@@ -14,6 +14,7 @@ import { Hands } from '@mediapipe/hands';
 const HandsMock = Hands as unknown as any;
 
 import { useHandTracking } from '../src/hooks/useHandTracking';
+import { PrivacyProvider, usePrivacy } from '../src/context/PrivacyContext';
 
 describe('useHandTracking', () => {
   afterEach(() => {
@@ -115,6 +116,52 @@ describe('useHandTracking', () => {
     const drawLm = makeLm({0:{x:0,y:0},5:{x:1,y:0},3:{x:0.5,y:1},4:{x:0.6,y:0},6:{x:0.6,y:1},8:{x:0.6,y:0},10:{x:1.5,y:1},12:{x:1.5,y:0},14:{x:2,y:0},16:{x:2,y:1},18:{x:3,y:0},20:{x:3,y:1}});
     await act(async () => { resultsCb({ multiHandLandmarks: [drawLm] }); });
     expect(currentGesture).toBe('draw');
+
+    await act(async () => { renderer.unmount(); });
+  });
+
+  it('stops stream when privacy mode is enabled', async () => {
+    const stop = vi.fn();
+    const stream = {
+      getTracks: () => [{ stop }]
+    } as unknown as MediaStream;
+
+    let resolveStream: (s: MediaStream) => void = () => {};
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>(res => { resolveStream = res; }));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(1));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const video = { play: vi.fn(), style: {} } as any;
+
+    HandsMock.mockReturnValue({
+      onResults: vi.fn(),
+      setOptions: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn()
+    });
+
+    let toggle: () => void = () => {};
+    function TestComponent() {
+      const { videoRef } = useHandTracking();
+      const privacy = usePrivacy();
+      toggle = privacy.toggle;
+      videoRef.current = video;
+      return null;
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        React.createElement(PrivacyProvider, null, React.createElement(TestComponent))
+      );
+    });
+
+    await act(async () => { resolveStream(stream); });
+    expect(getUserMedia).toHaveBeenCalled();
+
+    await act(async () => { toggle(); });
+    expect(stop).toHaveBeenCalled();
 
     await act(async () => { renderer.unmount(); });
   });

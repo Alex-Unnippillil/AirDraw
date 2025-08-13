@@ -5,6 +5,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { App } from '../src/main';
 import { CommandBusProvider } from '../src/context/CommandBusContext';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 import { CommandBus } from '@airdraw/core';
 import type { AppCommands } from '../src/commands';
 import { afterEach, describe, it, expect, vi } from 'vitest';
@@ -59,6 +60,21 @@ describe('App', () => {
       await waitFor(() => {
         expect(dispatchSpy).toHaveBeenCalledWith({ id: 'undo', args: {} });
       });
+    });
+
+    it('avoids parsePrompt when privacy mode is enabled', () => {
+      const bus = new CommandBus<AppCommands>();
+      render(
+        <CommandBusProvider bus={bus}>
+          <PrivacyProvider initialEnabled>
+            <App />
+          </PrivacyProvider>
+        </CommandBusProvider>
+      );
+      const input = screen.getByPlaceholderText('prompt');
+      fireEvent.change(input, { target: { value: 'undo' } });
+      fireEvent.submit(input.closest('form')!);
+      expect(parsePrompt).not.toHaveBeenCalled();
     });
 
     it('renders error from hand tracking', () => {

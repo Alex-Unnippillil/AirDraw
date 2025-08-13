@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GestureFSM, HandInput, Gesture } from '@airdraw/core';
 import { Hands } from '@mediapipe/hands';
+import { usePrivacy } from '../context/PrivacyContext';
 
 type Landmark = { x: number; y: number };
 
@@ -24,12 +25,22 @@ export function useHandTracking() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [gesture, setGesture] = useState<Gesture>('idle');
   const [error, setError] = useState<Error | null>(null);
+  const { enabled } = usePrivacy();
 
   const fsmRef = useRef(new GestureFSM());
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    if (enabled) {
+      const stream = video.srcObject as MediaStream | null;
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+      }
+      return;
+    }
 
     // keep video hidden - only used as input to mediapipe
     video.style.display = 'none';
@@ -94,7 +105,7 @@ export function useHandTracking() {
         video.srcObject = null;
       }
     };
-  }, []);
+  }, [enabled]);
 
   return { videoRef, gesture, error };
 }
