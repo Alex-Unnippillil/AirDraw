@@ -6,7 +6,6 @@ import { parsePrompt } from './ai/copilot';
 import { loadState, saveState } from './storage/indexedDb';
 
 export function App() {
-  const { videoRef, gesture, error } = useHandTracking();
 
   const bus = useCommandBus();
   const [prompt, setPrompt] = useState('');
@@ -14,8 +13,7 @@ export function App() {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
 
 
-  const handleStrokeComplete = (stroke: Stroke) => {
-    setStrokes(s => [...s, stroke]);
+
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,6 +25,9 @@ export function App() {
     setPrompt('');
   };
 
+  const handlePaletteSelect = async (cmd: any) => {
+    await bus.dispatch(cmd as AppCommand);
+  };
 
       <DrawingCanvas
         gesture={gesture}
@@ -40,6 +41,7 @@ export function App() {
           onChange={e => setPrompt(e.target.value)}
         />
       </form>
+      {error && <div role="alert">{error.message}</div>}
       <pre data-testid="strokes">{JSON.stringify(strokes)}</pre>
     </div>
   );
