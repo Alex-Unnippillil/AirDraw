@@ -128,6 +128,76 @@ describe('useHandTracking', () => {
     });
   });
 
+  it('detects two-finger swipe gestures', async () => {
+    let resultsCb: any = null;
+    HandsMock.mockReturnValue({
+      onResults: (cb: any) => { resultsCb = cb; },
+      setOptions: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn()
+    });
+
+    const stop = vi.fn();
+    const stream = {
+      getTracks: () => [{ stop }]
+    } as unknown as MediaStream;
+
+    let resolveStream: (s: MediaStream) => void = () => {};
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>(res => { resolveStream = res; }));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(1));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const video = { play: vi.fn(), style: {} } as any;
+
+    let currentGesture: any;
+    function TestComponent() {
+      const { videoRef, gesture } = useHandTracking();
+      videoRef.current = video;
+      currentGesture = gesture;
+      return null;
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(TestComponent));
+    });
+
+    await act(async () => { resolveStream(stream); });
+    await act(async () => {});
+
+    const makeTwoFinger = (xOffset: number) => {
+      const arr = Array.from({ length: 21 }, () => ({ x: 0, y: 0 }));
+      arr[0] = { x: 0, y: 0 };
+      arr[5] = { x: 1, y: 0 };
+      arr[3] = { x: 0.5, y: 1 };
+      arr[4] = { x: 0.6, y: 1 }; // thumb folded
+      arr[6] = { x: xOffset, y: 1 };
+      arr[8] = { x: xOffset, y: 0 };
+      arr[10] = { x: xOffset + 0.5, y: 1 };
+      arr[12] = { x: xOffset + 0.5, y: 0 };
+      arr[14] = { x: 3, y: 1 };
+      arr[16] = { x: 3, y: 2 }; // folded ring
+      arr[18] = { x: 4, y: 1 };
+      arr[20] = { x: 4, y: 2 }; // folded pinky
+      return arr;
+    };
+
+    const start = makeTwoFinger(2);
+    const left = makeTwoFinger(0.5);
+    const right = makeTwoFinger(2.5);
+
+    await act(async () => { resultsCb({ multiHandLandmarks: [start] }); });
+    await act(async () => { resultsCb({ multiHandLandmarks: [left] }); });
+    expect(currentGesture).toBe('swipeLeft');
+
+    await act(async () => { resultsCb({ multiHandLandmarks: [start] }); });
+    await act(async () => { resultsCb({ multiHandLandmarks: [right] }); });
+    expect(currentGesture).toBe('swipeRight');
+
+    await act(async () => { renderer.unmount(); });
+  });
+
   it('falls back to mouse when camera fails', async () => {
     HandsMock.mockReturnValue({
       onResults: vi.fn(),
