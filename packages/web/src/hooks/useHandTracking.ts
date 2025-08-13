@@ -30,6 +30,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
 
   const fsmRef = useRef(new GestureFSM());
   const stopRef = useRef<() => void>(() => {});
+  const swipeStartRef = useRef<Landmark | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -103,10 +104,25 @@ export function useHandTracking(config?: HandTrackingConfig) {
             return;
           }
           const lm = results.multiHandLandmarks[0] as unknown as Landmark[];
-          const input: HandInput = {
-            pinch: calcPinch(lm),
-            fingers: countFingers(lm)
-          };
+          const pinch = calcPinch(lm);
+          const fingers = countFingers(lm);
+          let swipe: 'left' | 'right' | null = null;
+          if (fingers === 2 && pinch < 0.5) {
+            const index = lm[8];
+            if (!swipeStartRef.current) {
+              swipeStartRef.current = index;
+            } else {
+              const dx = index.x - swipeStartRef.current.x;
+              if (Math.abs(dx) > 0.3) {
+                swipe = dx > 0 ? 'right' : 'left';
+                swipeStartRef.current = null;
+              }
+            }
+          } else {
+            swipeStartRef.current = null;
+          }
+
+          const input: HandInput = { pinch, fingers, swipe };
           const g = fsmRef.current.update(input);
           setGesture(g);
         });

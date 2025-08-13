@@ -34,4 +34,15 @@ describe('GestureFSM', () => {
     fsm.reset();
     expect(calls).toBe(1);
   });
+
+  it('handles swipe gestures', () => {
+    const fsm = new GestureFSM();
+    const events: Gesture[] = [];
+    fsm.on('change', g => events.push(g));
+    fsm.update({ pinch: 0, fingers: 2, swipe: 'left' });
+    expect(events.at(-1)).toBe('swipeLeft');
+    fsm.update({ pinch: 0, fingers: 2 });
+    fsm.update({ pinch: 0, fingers: 2, swipe: 'right' });
+    expect(events.at(-1)).toBe('swipeRight');
+  });
 });

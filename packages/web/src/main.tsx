@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
 import { useHandTracking } from './hooks/useHandTracking';
@@ -15,25 +15,6 @@ export function App() {
   const [color, setColor] = useState('#000000');
   const [strokes, setStrokes] = useState<Stroke[]>([]);
 
-  useEffect(() => {
-    loadState().then(state => {
-      if (state) {
-        setColor(state.color);
-        setStrokes(state.strokes);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    bus.register('setColor', ({ hex }) => setColor(hex));
-    bus.register('undo', () => setStrokes(s => s.slice(0, -1)));
-  }, [bus]);
-
-  useEffect(() => {
-    saveState({ strokes, color }).catch(() => {
-      /* ignore */
-    });
-  }, [strokes, color]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +25,7 @@ export function App() {
     setPrompt('');
   };
 
-  const handlePaletteSelect = (cmd: any) => {
-    bus.dispatch(cmd as AppCommand);
+
   };
 
   return (
@@ -56,7 +36,7 @@ export function App() {
         gesture={gesture}
         color={color}
         strokes={strokes}
-        onStrokeComplete={s => setStrokes(strks => [...strks, s])}
+
       />
       {gesture === 'palette' && <RadialPalette onSelect={handlePaletteSelect} />}
       <form onSubmit={handleSubmit}>

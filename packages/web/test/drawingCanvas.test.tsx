@@ -10,8 +10,7 @@ import type { AppCommands } from '../src/commands';
 import { App } from '../src/main';
 import { afterEach, describe, it, vi, expect } from 'vitest';
 
-const mockCtx = { clearRect: () => {}, beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {} };
-(HTMLCanvasElement.prototype as any).getContext = () => mockCtx;
+
 
 let mockGesture = 'draw';
 
