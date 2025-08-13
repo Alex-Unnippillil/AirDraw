@@ -6,6 +6,7 @@ import RadialPalette from './components/RadialPalette';
 import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
 import type { AppCommand } from './commands';
 import { parsePrompt } from './ai/copilot';
+import { loadState, saveState } from './storage/indexedDb';
 
 export function App() {
   const { videoRef, gesture, error } = useHandTracking();
@@ -13,32 +14,7 @@ export function App() {
   const [prompt, setPrompt] = useState('');
   const [color, setColor] = useState('#000000');
   const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const undoneRef = useRef<Stroke[]>([]);
 
-  useEffect(() => {
-    bus.register('setColor', ({ hex }) => setColor(hex));
-    bus.register('undo', () => {
-      setStrokes(s => {
-        const last = s[s.length - 1];
-        if (last) undoneRef.current.push(last);
-        return s.slice(0, -1);
-      });
-    });
-    bus.register('redo', () => {
-      setStrokes(s => {
-        const stroke = undoneRef.current.pop();
-        return stroke ? [...s, stroke] : s;
-      });
-    });
-  }, [bus]);
-
-  useEffect(() => {
-    if (gesture === 'swipeLeft') {
-      bus.dispatch({ id: 'undo', args: {} });
-    } else if (gesture === 'swipeRight') {
-      bus.dispatch({ id: 'redo', args: {} });
-    }
-  }, [gesture, bus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +25,7 @@ export function App() {
     setPrompt('');
   };
 
-  const handlePaletteSelect = (cmd: AppCommand) => {
-    bus.dispatch(cmd);
+
   };
 
   return (
@@ -61,10 +36,7 @@ export function App() {
         gesture={gesture}
         color={color}
         strokes={strokes}
-        onStrokeComplete={s => {
-          undoneRef.current = [];
-          setStrokes(strokes => [...strokes, s]);
-        }}
+
       />
       {gesture === 'palette' && <RadialPalette onSelect={handlePaletteSelect} />}
       <form onSubmit={handleSubmit}>
@@ -89,4 +61,3 @@ if (el) {
 }
 
 export default App;
-
