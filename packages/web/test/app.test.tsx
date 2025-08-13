@@ -5,6 +5,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { App } from '../src/main';
 import { CommandBusProvider } from '../src/context/CommandBusContext';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 import { CommandBus } from '@airdraw/core';
 import type { AppCommands } from '../src/commands';
 import { afterEach, describe, it, expect, vi } from 'vitest';
@@ -20,6 +21,18 @@ vi.mock('../src/ai/copilot', () => ({
 }));
 import { parsePrompt } from '../src/ai/copilot';
 
+(HTMLCanvasElement.prototype as any).getContext = () => ({
+  clearRect: () => {},
+  beginPath: () => {},
+  moveTo: () => {},
+  lineTo: () => {},
+  stroke: () => {},
+  closePath: () => {},
+  lineJoin: '',
+  strokeStyle: '',
+  lineWidth: 0
+});
+
 describe('App', () => {
   afterEach(() => {
     cleanup();
@@ -31,14 +44,18 @@ describe('App', () => {
       const bus = new CommandBus<AppCommands>();
       const { rerender } = render(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
       expect(screen.queryByText('Black')).toBeNull();
       mockGesture = 'palette';
       rerender(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
       expect(screen.queryByText('Black')).not.toBeNull();
@@ -50,7 +67,9 @@ describe('App', () => {
       const dispatchSpy = vi.spyOn(bus, 'dispatch');
       render(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
       const input = screen.getByPlaceholderText('prompt');
@@ -66,9 +85,30 @@ describe('App', () => {
       mockError = new Error('camera denied');
       render(
         <CommandBusProvider bus={bus}>
-          <App />
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
         </CommandBusProvider>
       );
       expect(screen.getByRole('alert').textContent).toContain('camera denied');
     });
-});
+
+    it('skips network features when privacy enabled', async () => {
+      (parsePrompt as any).mockResolvedValue([]);
+      const bus = new CommandBus<AppCommands>();
+      render(
+        <CommandBusProvider bus={bus}>
+          <PrivacyProvider>
+            <App />
+          </PrivacyProvider>
+        </CommandBusProvider>
+      );
+      fireEvent.keyDown(window, { code: 'Space' });
+      const input = screen.getByPlaceholderText('prompt');
+      fireEvent.change(input, { target: { value: 'undo' } });
+      fireEvent.submit(input.closest('form')!);
+      await waitFor(() => {
+        expect(parsePrompt).not.toHaveBeenCalled();
+      });
+    });
+  });

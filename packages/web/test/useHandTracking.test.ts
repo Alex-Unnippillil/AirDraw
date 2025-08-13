@@ -17,6 +17,7 @@ import { Hands } from '@mediapipe/hands';
 const HandsMock = Hands as unknown as any;
 
 import { useHandTracking } from '../src/hooks/useHandTracking';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 
 describe('useHandTracking', () => {
   afterEach(() => {
@@ -55,7 +56,9 @@ describe('useHandTracking', () => {
 
     let renderer: TestRenderer.ReactTestRenderer;
     await act(async () => {
-      renderer = TestRenderer.create(React.createElement(TestComponent));
+      renderer = TestRenderer.create(
+        React.createElement(PrivacyProvider, {}, React.createElement(TestComponent))
+      );
     });
 
     await act(async () => {
@@ -65,6 +68,48 @@ describe('useHandTracking', () => {
     await act(async () => {
       stopFn();
       renderer.unmount();
+    });
+
+    expect(stopTrack).toHaveBeenCalled();
+  });
+
+  it('stops stream when privacy enabled', async () => {
+    const stopTrack = vi.fn();
+    const stream = {
+      getTracks: () => [{ stop: stopTrack }]
+    } as unknown as MediaStream;
+
+    let resolveStream: (s: MediaStream) => void = () => {};
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>(res => { resolveStream = res; }));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(1));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const video = { play: vi.fn(), style: {} } as any;
+
+    HandsMock.mockReturnValue({
+      onResults: vi.fn(),
+      setOptions: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn()
+    });
+
+    function TestComponent() {
+      const { videoRef } = useHandTracking();
+      videoRef.current = video;
+      return null;
+    }
+
+    await act(async () => {
+      TestRenderer.create(
+        React.createElement(PrivacyProvider, {}, React.createElement(TestComponent))
+      );
+    });
+
+    await act(async () => { resolveStream(stream); });
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
     });
 
     expect(stopTrack).toHaveBeenCalled();
@@ -102,7 +147,9 @@ describe('useHandTracking', () => {
 
     let renderer: TestRenderer.ReactTestRenderer;
     await act(async () => {
-      renderer = TestRenderer.create(React.createElement(TestComponent));
+      renderer = TestRenderer.create(
+        React.createElement(PrivacyProvider, {}, React.createElement(TestComponent))
+      );
     });
 
     await act(async () => { resolveStream(stream); });
@@ -156,8 +203,11 @@ describe('useHandTracking', () => {
     }
 
     await act(async () => {
-      TestRenderer.create(React.createElement(TestComponent));
+      TestRenderer.create(
+        React.createElement(PrivacyProvider, {}, React.createElement(TestComponent))
+      );
     });
+
 
     // allow async catch to run
     await act(async () => {});
