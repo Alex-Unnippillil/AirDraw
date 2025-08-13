@@ -11,7 +11,7 @@ import { defaultPaletteItems } from '../src/config/palette';
 describe('RadialPalette', () => {
   it('renders palette items and handles selection', () => {
     const onSelect = vi.fn();
-    render(<RadialPalette onSelect={onSelect} />);
+    render(<RadialPalette items={defaultPaletteItems} onSelect={onSelect} />);
 
     // Renders items
     defaultPaletteItems.forEach(item => {
@@ -26,5 +26,27 @@ describe('RadialPalette', () => {
     const firstButton = screen.getByText(defaultPaletteItems[0].label);
     fireEvent.keyDown(firstButton, { key: 'Enter' });
     expect(onSelect).toHaveBeenNthCalledWith(2, defaultPaletteItems[0].command);
+  });
+
+  it('supports arrow key navigation through all items', () => {
+    render(<RadialPalette items={defaultPaletteItems} />);
+    const buttons = screen.getAllByRole('menuitem');
+
+    // focus first item
+    buttons[0].focus();
+    expect(document.activeElement).toBe(buttons[0]);
+
+    for (let i = 1; i < buttons.length; i++) {
+      fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowRight' });
+      expect(document.activeElement?.textContent).toBe(buttons[i].textContent);
+    }
+
+    // Wrap around to first
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowRight' });
+    expect(document.activeElement?.textContent).toBe(buttons[0].textContent);
+
+    // Navigate backwards from first to last
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowLeft' });
+    expect(document.activeElement?.textContent).toBe(buttons[buttons.length - 1].textContent);
   });
 });
