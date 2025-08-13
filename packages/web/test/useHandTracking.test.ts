@@ -183,5 +183,81 @@ describe('useHandTracking', () => {
     });
     expect(currentGesture).toBe('idle');
   });
+
+  it('detects swipes and dispatches commands', async () => {
+    let resultsCb: any = null;
+    HandsMock.mockReturnValue({
+      onResults: (cb: any) => {
+        resultsCb = cb;
+      },
+      setOptions: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn()
+    });
+
+    const stop = vi.fn();
+    const stream = {
+      getTracks: () => [{ stop }]
+    } as unknown as MediaStream;
+
+    let resolveStream: (s: MediaStream) => void = () => {};
+    const getUserMedia = vi.fn(() => new Promise<MediaStream>(res => { resolveStream = res; }));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(1));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const video = { play: vi.fn(), style: {} } as any;
+
+    const bus = { dispatch: vi.fn() };
+
+    function TestComponent() {
+      const { videoRef, gesture } = useHandTracking();
+      videoRef.current = video;
+      React.useEffect(() => {
+        if (gesture === 'swipeLeft') bus.dispatch({ id: 'undo', args: {} });
+        if (gesture === 'swipeRight') bus.dispatch({ id: 'redo', args: {} });
+      }, [gesture]);
+      return null;
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(TestComponent));
+    });
+
+    await act(async () => { resolveStream(stream); });
+    await act(async () => {});
+
+    const baseLm = Array.from({ length: 21 }, () => ({ x: 0, y: 1 }));
+    baseLm[0] = { x: 0, y: 0 }; // wrist for scale
+    baseLm[5] = { x: 1, y: 0 }; // index mcp for scale
+    baseLm[3] = { x: 0, y: 1 }; // thumb base
+    baseLm[4] = { x: 1, y: 1 }; // thumb tip (not counted)
+
+    const makeLm = (x: number) => {
+      const lm = baseLm.map(p => ({ ...p }));
+      lm[6] = { x, y: 1 }; // index pip
+      lm[8] = { x, y: 0 }; // index tip up
+      lm[10] = { x, y: 1 }; // middle pip
+      lm[12] = { x, y: 0 }; // middle tip up
+      lm[14] = { x, y: 2 }; // ring pip (down)
+      lm[16] = { x, y: 3 }; // ring tip down
+      lm[18] = { x, y: 2 }; // pinky pip (down)
+      lm[20] = { x, y: 3 }; // pinky tip down
+      return lm;
+    };
+
+    await act(async () => { resultsCb({ multiHandLandmarks: [makeLm(0.8)] }); });
+    await act(async () => { resultsCb({ multiHandLandmarks: [makeLm(0.2)] }); });
+    expect(bus.dispatch).toHaveBeenCalledWith({ id: 'undo', args: {} });
+
+    bus.dispatch.mockClear();
+
+    await act(async () => { resultsCb({ multiHandLandmarks: [makeLm(0.2)] }); });
+    await act(async () => { resultsCb({ multiHandLandmarks: [makeLm(0.8)] }); });
+    expect(bus.dispatch).toHaveBeenCalledWith({ id: 'redo', args: {} });
+
+    await act(async () => { renderer.unmount(); });
+  });
 });
 

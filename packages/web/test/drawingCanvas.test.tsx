@@ -9,6 +9,16 @@ import type { AppCommands } from '../src/commands';
 import { App } from '../src/main';
 import { afterEach, describe, it, vi, expect } from 'vitest';
 
+const mockCtx = {
+  clearRect: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  stroke: vi.fn()
+} as any;
+// @ts-ignore
+HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCtx);
+
 let mockGesture = 'draw';
 
 vi.mock('../src/hooks/useHandTracking', () => ({
