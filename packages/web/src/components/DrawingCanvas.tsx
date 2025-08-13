@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { BrushEngine, type Vec2 } from '@airdraw/core';
+import { saveStrokes } from '../storage/indexedDb';
 
 export interface Stroke {
   points: Vec2[];
@@ -10,10 +11,11 @@ export interface DrawingCanvasProps {
   gesture: string;
   color: string;
   strokes: Stroke[];
+  projectId: string;
   onStrokeComplete: (stroke: Stroke) => void;
 }
 
-export function DrawingCanvas({ gesture, color, strokes, onStrokeComplete }: DrawingCanvasProps) {
+export function DrawingCanvas({ gesture, color, strokes, projectId, onStrokeComplete }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef(new BrushEngine());
   const drawingRef = useRef(false);
@@ -68,7 +70,9 @@ export function DrawingCanvas({ gesture, color, strokes, onStrokeComplete }: Dra
     if (!drawingRef.current) return;
     const stroke = engineRef.current.end();
     drawingRef.current = false;
-    onStrokeComplete({ color, points: stroke.points });
+    const s = { color, points: stroke.points };
+    onStrokeComplete(s);
+    saveStrokes(projectId, [...strokes, s]);
   };
 
   return (

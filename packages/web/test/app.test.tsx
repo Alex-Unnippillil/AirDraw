@@ -7,7 +7,7 @@ import { App } from '../src/main';
 import { CommandBusProvider } from '../src/context/CommandBusContext';
 import { CommandBus } from '@airdraw/core';
 import type { AppCommands } from '../src/commands';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
 
 let mockGesture: string = 'idle';
 let mockError: Error | null = null;
@@ -21,6 +21,9 @@ vi.mock('../src/ai/copilot', () => ({
 import { parsePrompt } from '../src/ai/copilot';
 
 describe('App', () => {
+  beforeAll(() => {
+    HTMLCanvasElement.prototype.getContext = vi.fn();
+  });
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
