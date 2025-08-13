@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { GestureFSM, HandInput, Gesture } from '@airdraw/core';
-import { Hands } from '@mediapipe/hands';
 
 type Landmark = { x: number; y: number };
 
@@ -20,12 +19,17 @@ function countFingers(lm: Landmark[]): number {
   return fingers;
 }
 
-export function useHandTracking() {
+export interface HandTrackingConfig {
+  baseUrl?: string;
+}
+
+export function useHandTracking(config?: HandTrackingConfig) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [gesture, setGesture] = useState<Gesture>('idle');
   const [error, setError] = useState<Error | null>(null);
 
   const fsmRef = useRef(new GestureFSM());
+  const stopRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const video = videoRef.current;
@@ -36,66 +40,98 @@ export function useHandTracking() {
 
     let raf = 0;
     let active = true;
+    let hands: any;
+    let stream: MediaStream | null = null;
+    let cleanupMouse = () => {};
 
-    const hands = new Hands({
-      locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-    });
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 0,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
-
-    hands.onResults(results => {
-      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-        setGesture(fsmRef.current.update({ pinch: 0, fingers: 0 }));
-        return;
-      }
-      const lm = results.multiHandLandmarks[0] as unknown as Landmark[];
-      const input: HandInput = {
-        pinch: calcPinch(lm),
-        fingers: countFingers(lm)
+    const setupMouse = () => {
+      const down = () => setGesture('draw');
+      const up = () => setGesture('idle');
+      window.addEventListener('pointerdown', down);
+      window.addEventListener('pointerup', up);
+      return () => {
+        window.removeEventListener('pointerdown', down);
+        window.removeEventListener('pointerup', up);
       };
-      const g = fsmRef.current.update(input);
-      setGesture(g);
-    });
+    };
+
+    const stop = () => {
+      active = false;
+      cancelAnimationFrame(raf);
+      hands && hands.close && hands.close();
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      if (video.srcObject) {
+        video.srcObject = null;
+      }
+      cleanupMouse();
+    };
+    stopRef.current = stop;
 
     const loop = async () => {
       try {
         await hands.send({ image: video });
       } catch (err) {
-        if (active) setError(err as Error);
+        if (active) {
+          setError(err as Error);
+          stop();
+          cleanupMouse = setupMouse();
+        }
+        return;
       }
       if (active) raf = requestAnimationFrame(loop);
     };
 
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then(stream => {
+    const start = async () => {
+      try {
+        const { Hands } = await import('@mediapipe/hands');
+        hands = new Hands({
+          locateFile: (file: string) => `${config?.baseUrl ?? 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'}${file}`
+        });
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 0,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(results => {
+          if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+            setGesture(fsmRef.current.update({ pinch: 0, fingers: 0 }));
+            return;
+          }
+          const lm = results.multiHandLandmarks[0] as unknown as Landmark[];
+          const input: HandInput = {
+            pinch: calcPinch(lm),
+            fingers: countFingers(lm)
+          };
+          const g = fsmRef.current.update(input);
+          setGesture(g);
+        });
+
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
         if (!active) {
           stream.getTracks().forEach(t => t.stop());
           return;
         }
         video.srcObject = stream;
-        return (video.play ? video.play() : Promise.resolve()).then(() => loop());
-      })
-      .catch(err => {
-        if (active) setError(err);
-      });
-
-    return () => {
-      active = false;
-      cancelAnimationFrame(raf);
-      hands.close && hands.close();
-      const stream = video.srcObject as MediaStream | null;
-      if (stream) {
-        stream.getTracks().forEach(t => t.stop());
-        video.srcObject = null;
+        await (video.play ? video.play() : Promise.resolve());
+        raf = requestAnimationFrame(loop);
+      } catch (err) {
+        if (active) {
+          setError(err as Error);
+          cleanupMouse = setupMouse();
+        }
       }
     };
-  }, []);
 
-  return { videoRef, gesture, error };
+    start();
+
+    return stop;
+  }, [config?.baseUrl]);
+
+  return { videoRef, gesture, error, stop: stopRef.current };
 }
 

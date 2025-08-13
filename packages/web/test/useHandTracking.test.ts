@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment jsdom
+ */
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -21,10 +24,10 @@ describe('useHandTracking', () => {
     vi.unstubAllGlobals();
   });
 
-  it('stops media stream on cleanup', async () => {
-    const stop = vi.fn();
+  it('stops media stream when stop is called', async () => {
+    const stopTrack = vi.fn();
     const stream = {
-      getTracks: () => [{ stop }]
+      getTracks: () => [{ stop: stopTrack }]
     } as unknown as MediaStream;
 
     let resolveStream: (s: MediaStream) => void = () => {};
@@ -42,9 +45,11 @@ describe('useHandTracking', () => {
       close: vi.fn()
     });
 
+    let stopFn: () => void = () => {};
     function TestComponent() {
-      const { videoRef } = useHandTracking();
+      const { videoRef, stop } = useHandTracking();
       videoRef.current = video;
+      stopFn = stop;
       return null;
     }
 
@@ -58,10 +63,11 @@ describe('useHandTracking', () => {
     });
 
     await act(async () => {
+      stopFn();
       renderer.unmount();
     });
 
-    expect(stop).toHaveBeenCalled();
+    expect(stopTrack).toHaveBeenCalled();
   });
 
   it('updates gesture from mediapipe results', async () => {
@@ -100,6 +106,7 @@ describe('useHandTracking', () => {
     });
 
     await act(async () => { resolveStream(stream); });
+    await act(async () => {});
 
     // open palm -> palette
     const makeLm = (overrides: Record<number, {x:number;y:number}>) => {
@@ -116,7 +123,65 @@ describe('useHandTracking', () => {
     await act(async () => { resultsCb({ multiHandLandmarks: [drawLm] }); });
     expect(currentGesture).toBe('draw');
 
-    await act(async () => { renderer.unmount(); });
+    await act(async () => {
+      renderer.unmount();
+    });
+  });
+
+  it('falls back to mouse when camera fails', async () => {
+    HandsMock.mockReturnValue({
+      onResults: vi.fn(),
+      setOptions: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn()
+    });
+
+    const getUserMedia = vi.fn(() => Promise.reject(new Error('denied')));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+    vi.stubGlobal('requestAnimationFrame', vi.fn());
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const video = { style: {} } as any;
+
+    let currentGesture: any = 'idle';
+    let currentError: any = null;
+    let stopFn: () => void = () => {};
+    function TestComponent() {
+      const { videoRef, gesture, error, stop } = useHandTracking();
+      videoRef.current = video;
+      currentGesture = gesture;
+      currentError = error;
+      stopFn = stop;
+      return null;
+    }
+
+    await act(async () => {
+      TestRenderer.create(React.createElement(TestComponent));
+    });
+
+    // allow async catch to run
+    await act(async () => {});
+
+    expect(currentError).toBeInstanceOf(Error);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('pointerdown'));
+    });
+    expect(currentGesture).toBe('draw');
+
+    await act(async () => {
+      window.dispatchEvent(new Event('pointerup'));
+    });
+    expect(currentGesture).toBe('idle');
+
+    await act(async () => {
+      stopFn();
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event('pointerdown'));
+    });
+    expect(currentGesture).toBe('idle');
   });
 });
 
