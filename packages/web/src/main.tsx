@@ -1,23 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
-import { useHandTracking } from './hooks/useHandTracking';
-import RadialPalette from './components/RadialPalette';
-import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
-import type { AppCommand } from './commands';
-import { parsePrompt } from './ai/copilot';
+
 
 export function App() {
   const { videoRef, gesture, error } = useHandTracking();
   const bus = useCommandBus();
   const [prompt, setPrompt] = useState('');
-  const [color, setColor] = useState('#000000');
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
 
-  useEffect(() => {
-    bus.register('setColor', ({ hex }) => setColor(hex));
-    bus.register('undo', () => setStrokes(s => s.slice(0, -1)));
-  }, [bus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,21 +17,12 @@ export function App() {
     setPrompt('');
   };
 
-  const handlePaletteSelect = (cmd: any) => {
-    bus.dispatch(cmd as AppCommand);
+
   };
 
   return (
     <div>
-      {error && <div role="alert">{error.message}</div>}
-      <video ref={videoRef} />
-      <DrawingCanvas
-        gesture={gesture}
-        color={color}
-        strokes={strokes}
-        onStrokeComplete={s => setStrokes(strokes => [...strokes, s])}
-      />
-      {gesture === 'palette' && <RadialPalette onSelect={handlePaletteSelect} />}
+
       <form onSubmit={handleSubmit}>
         <input
           placeholder="prompt"
@@ -63,3 +43,6 @@ if (el) {
     </CommandBusProvider>
   );
 }
+
+export default App;
+
