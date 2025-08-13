@@ -183,5 +183,70 @@ describe('useHandTracking', () => {
     });
     expect(currentGesture).toBe('idle');
   });
+
+  it('falls back to mouse when mediapipe send fails', async () => {
+    const send = vi.fn(() => Promise.reject(new Error('mp fail')));
+    HandsMock.mockReturnValue({
+      onResults: vi.fn(),
+      setOptions: vi.fn(),
+      send,
+      close: vi.fn()
+    });
+
+    const stopTrack = vi.fn();
+    const stream = {
+      getTracks: () => [{ stop: stopTrack }]
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn(() => Promise.resolve(stream));
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+
+    vi.stubGlobal('requestAnimationFrame', (cb: any) => {
+      cb();
+      return 1;
+    });
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+    const video = { play: vi.fn(() => Promise.resolve()), style: {} } as any;
+
+    let currentGesture: any = 'idle';
+    let currentError: any = null;
+    let stopFn: () => void = () => {};
+    function TestComponent() {
+      const { videoRef, gesture, error, stop } = useHandTracking();
+      videoRef.current = video;
+      currentGesture = gesture;
+      currentError = error;
+      stopFn = stop;
+      return null;
+    }
+
+    await act(async () => {
+      TestRenderer.create(React.createElement(TestComponent));
+    });
+
+    // allow async catch to run
+    await act(async () => {});
+
+    expect(currentError).toBeInstanceOf(Error);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('pointerdown'));
+    });
+    expect(currentGesture).toBe('draw');
+
+    await act(async () => {
+      window.dispatchEvent(new Event('pointerup'));
+    });
+    expect(currentGesture).toBe('idle');
+
+    await act(async () => {
+      stopFn();
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event('pointerdown'));
+    });
+    expect(currentGesture).toBe('idle');
+  });
 });
 
