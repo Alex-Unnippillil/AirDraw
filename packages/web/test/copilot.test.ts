@@ -1,3 +1,4 @@
+// Tests for keyword-based copilot prompt parser
 import { describe, it, expect } from 'vitest';
 import { parsePrompt } from '../src/ai/copilot';
 

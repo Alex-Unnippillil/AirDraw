@@ -43,12 +43,17 @@ Maps keypoint patterns to deterministic states.
 ```ts
 interface Command { id: string; args: Record<string, any>; dryRun?: boolean }
 class CommandBus {
+  register(
+    id: string,
+    doHandler: (args: Record<string, any>) => void | Promise<void>,
+    undoHandler?: (args: Record<string, any>) => void | Promise<void>
+  ): () => void
   dispatch(cmd: Command): Promise<void>
-  undo(): void
-  redo(): void
+  undo(): Promise<void>
+  redo(): Promise<void>
 }
 ```
-Executes commands with undo support.
+Executes commands with undo support. `register` returns an unsubscribe function. If any handler throws, the error is rethrown and the history stacks remain unchanged.
 
 ### Brush Pipeline (core)
 ```ts
