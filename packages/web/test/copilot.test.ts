@@ -1,28 +1,19 @@
 // Tests for keyword-based copilot prompt parser
 import { describe, it, expect } from 'vitest';
 import { parsePrompt } from '../src/ai/copilot';
+import type { AppCommand } from '../src/commands';
 
 describe('parsePrompt', () => {
-  it('handles undo intent', async () => {
-    expect(await parsePrompt('undo the last action')).toEqual([
-      { id: 'undo', args: {} },
-    ]);
-  });
+  const cases: Array<[string, AppCommand[]]> = [
+    ['undo the last action', [{ id: 'undo', args: {} }]],
+    ['make it red', [{ id: 'setColor', args: { hex: '#ff0000' } }]],
+    ['switch to black', [{ id: 'setColor', args: { hex: '#000000' } }]],
+    ['do something else', []],
+  ];
 
-  it('handles red intent', async () => {
-    expect(await parsePrompt('make it red')).toEqual([
-      { id: 'setColor', args: { hex: '#ff0000' } },
-    ]);
-  });
-
-  it('handles black intent', async () => {
-    expect(await parsePrompt('switch to black')).toEqual([
-      { id: 'setColor', args: { hex: '#000000' } },
-    ]);
-  });
-
-  it('returns empty array for unknown prompts', async () => {
-    expect(await parsePrompt('do something else')).toEqual([]);
+  cases.forEach(([prompt, expected]) => {
+    it(`parses "${prompt}"`, async () => {
+      expect(await parsePrompt(prompt)).toEqual(expected);
+    });
   });
 });
-
