@@ -13,7 +13,8 @@
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "test": "vitest run",
-    "package": "echo 'electron package stub'"
+    "package": "echo 'electron package stub'",
+    "audit": "npm audit --audit-level=high"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
