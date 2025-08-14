@@ -12,6 +12,7 @@
     "build": "npm run build -w @airdraw/web",
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
+    "format:check": "prettier . --check",
     "test": "vitest run",
     "package": "echo 'electron package stub'"
   },
