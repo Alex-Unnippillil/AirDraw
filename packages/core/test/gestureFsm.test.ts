@@ -45,4 +45,11 @@ describe('GestureFSM', () => {
     fsm.update({ pinch: 0, fingers: 2, swipe: 'right' });
     expect(events.at(-1)).toBe('swipeRight');
   });
+
+  it('resets to idle after swipe', () => {
+    const fsm = new GestureFSM();
+    fsm.update({ pinch: 0, fingers: 2, swipe: 'left' });
+    const g = fsm.update({ pinch: 0, fingers: 2 });
+    expect(g).toBe('idle');
+  });
 });
