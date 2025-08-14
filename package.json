@@ -13,18 +13,29 @@
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "test": "vitest run",
-    "package": "echo 'electron package stub'"
+    "package": "echo 'electron package stub'",
+    "prepare": "husky install",
+    "lint-staged": "lint-staged"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",
-    "jsdom": "^26.1.0",
     "fake-indexeddb": "^6.1.0",
+    "husky": "^9.1.7",
+    "jsdom": "^26.1.0",
+    "lint-staged": "^16.1.5",
     "prettier": "^3.2.5",
     "react-test-renderer": "^18.3.1",
     "typescript": "^5.3.3",
     "vitest": "^0.34.6"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": "prettier --write"
   }
 }
