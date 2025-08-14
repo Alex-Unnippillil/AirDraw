@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @airdraw/web",
-    "build": "npm run build -w @airdraw/web",
+    "build": "npm run build -w @airdraw/core && npm run build -w @airdraw/server && npm run build -w @airdraw/web",
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "test": "vitest run",
