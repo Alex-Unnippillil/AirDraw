@@ -1,11 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
-import RadialPalette from './components/RadialPalette';
-import { useHandTracking } from './hooks/useHandTracking';
-import { useCommandBus, CommandBusProvider } from './context/CommandBusContext';
-import { PrivacyProvider } from './context/PrivacyContext';
+
 import type { AppCommand } from './commands';
 import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
 import { PrivacyProvider } from './context/PrivacyContext';
@@ -33,9 +29,7 @@ export function App() {
     setPrompt('');
   };
 
-  const handlePaletteSelect = async (cmd: any) => {
-    await bus.dispatch(cmd as AppCommand);
-  };
+  const cameraActive = !!videoRef.current && !!(videoRef.current as any).srcObject;
 
 
       <DrawingCanvas
