@@ -34,11 +34,13 @@ describe('parsePrompt', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    delete process.env.OPENAI_API_KEY;
   });
 
   it('skips openai when privacy is enabled', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ json: async () => [] });
+    const fetchMock = vi.fn().mockResolvedValue({ json: async () => ({}) });
     vi.stubGlobal('fetch', fetchMock);
+    process.env.OPENAI_API_KEY = 'test';
     render(<PrivacyProvider><div /></PrivacyProvider>);
     await act(async () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
@@ -48,11 +50,19 @@ describe('parsePrompt', () => {
   });
 
   it('calls openai when privacy is disabled', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ json: async () => [] });
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({
+        choices: [
+          { message: { content: '[{"id":"undo","args":{}}]' } },
+        ],
+      }),
+    });
     vi.stubGlobal('fetch', fetchMock);
+    process.env.OPENAI_API_KEY = 'test';
     render(<PrivacyProvider><div /></PrivacyProvider>);
-    await parsePrompt('unknown');
+    const result = await parsePrompt('unknown');
     expect(fetchMock).toHaveBeenCalled();
+    expect(result).toEqual([{ id: 'undo', args: {} }]);
   });
 });
 
