@@ -5,17 +5,17 @@ export type Command<ID extends string, Args> = {
   args: Args;
 };
 
-export type CommandOf<M extends Record<string, any>> = {
+export type CommandOf<M extends Record<string, unknown>> = {
   [K in keyof M]: { id: K; args: M[K] };
 }[keyof M];
 
-export class CommandBus<Cmds extends Record<string, any>> {
+export class CommandBus<Cmds extends Record<string, unknown>> {
   private handlers = new Map<
     string,
-    { do: CommandHandler<any>; undo?: CommandHandler<any> }
+    { do: CommandHandler<unknown>; undo?: CommandHandler<unknown> }
   >();
-  private undoStack: Array<Command<keyof Cmds & string, any>> = [];
-  private redoStack: Array<Command<keyof Cmds & string, any>> = [];
+  private undoStack: Array<Command<keyof Cmds & string, unknown>> = [];
+  private redoStack: Array<Command<keyof Cmds & string, unknown>> = [];
 
   register<ID extends string, Args>(
     id: ID,
@@ -23,8 +23,8 @@ export class CommandBus<Cmds extends Record<string, any>> {
     undo?: CommandHandler<Args>
   ) {
     this.handlers.set(id, {
-      do: handler as CommandHandler<any>,
-      ...(undo ? { undo: undo as CommandHandler<any> } : {}),
+      do: handler as CommandHandler<unknown>,
+      ...(undo ? { undo: undo as CommandHandler<unknown> } : {}),
     });
     return () => {
       this.handlers.delete(id);
@@ -34,13 +34,9 @@ export class CommandBus<Cmds extends Record<string, any>> {
   async dispatch<ID extends keyof Cmds>(cmd: Command<ID & string, Cmds[ID]>) {
     const entry = this.handlers.get(cmd.id as string);
     if (!entry) return;
-    try {
-      await entry.do(cmd.args);
-      this.undoStack.push(cmd as Command<keyof Cmds & string, any>);
-      this.redoStack = [];
-    } catch (err) {
-      throw err;
-    }
+    await entry.do(cmd.args);
+    this.undoStack.push(cmd as Command<keyof Cmds & string, unknown>);
+    this.redoStack = [];
   }
 
   async undo() {

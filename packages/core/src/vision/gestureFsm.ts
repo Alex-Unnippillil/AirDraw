@@ -12,14 +12,14 @@ export interface HandInput {
   swipe?: 'left' | 'right' | null;
 }
 
-type Listener<Args extends any[]> = (...args: Args) => void;
+type Listener<Args extends unknown[]> = (...args: Args) => void;
 
-interface Emitter<Events extends Record<string, any[]>> {
+interface Emitter<Events extends Record<string, unknown[]>> {
   on<E extends keyof Events>(event: E, listener: Listener<Events[E]>): () => void;
   emit<E extends keyof Events>(event: E, ...args: Events[E]): void;
 }
 
-function createEmitter<Events extends Record<string, any[]>>(): Emitter<Events> {
+function createEmitter<Events extends Record<string, unknown[]>>(): Emitter<Events> {
   const listeners: { [K in keyof Events]?: Listener<Events[K]>[] } = {};
   return {
     on(event, listener) {

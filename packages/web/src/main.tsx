@@ -1,24 +1,37 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-
 
 import type { AppCommand } from './commands';
 import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
 import { PrivacyProvider } from './context/PrivacyContext';
-import DrawingCanvas, { Stroke } from './components/DrawingCanvas';
+import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
 import RadialPalette from './components/RadialPalette';
 import { useHandTracking } from './hooks/useHandTracking';
 import { parsePrompt } from './ai/copilot';
-import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
-import RadialPalette from './components/RadialPalette';
-import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
-import { PrivacyProvider } from './context/PrivacyContext';
-import { useHandTracking } from './hooks/useHandTracking';
 import { loadState, saveState } from './storage/indexedDb';
 
 export function App() {
   const bus = useCommandBus();
+  const { videoRef, gesture, error } = useHandTracking();
+  const [prompt, setPrompt] = useState('');
+  const [color, setColor] = useState('Black');
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
 
+  useEffect(() => {
+    loadState<Stroke[]>('strokes').then(s => s && setStrokes(s));
+  }, []);
+
+  useEffect(() => {
+    saveState('strokes', strokes);
+  }, [strokes]);
+
+  const handleStrokeComplete = (stroke: Stroke) => {
+    setStrokes([...strokes, stroke]);
+  };
+
+  const handlePaletteSelect = (c: string) => {
+    setColor(c);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,16 +42,21 @@ export function App() {
     setPrompt('');
   };
 
-  const cameraActive = !!videoRef.current && !!(videoRef.current as any).srcObject;
+  const cameraActive =
+    !!videoRef.current && !!videoRef.current.srcObject;
 
-
+  return (
+    <div>
+      <video
+        ref={videoRef}
+        style={{ display: cameraActive ? 'block' : 'none' }}
+      />
       <DrawingCanvas
         gesture={gesture}
         color={color}
         strokes={strokes}
         onStrokeComplete={handleStrokeComplete}
       />
-
       <form onSubmit={handleSubmit}>
         <input
           placeholder="prompt"
@@ -65,4 +83,3 @@ if (el) {
 }
 
 export default App;
-

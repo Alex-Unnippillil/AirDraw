@@ -13,7 +13,7 @@ import { afterEach, describe, it, vi, expect } from 'vitest';
 const mockCtx = { clearRect: () => {}, beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {} };
 (HTMLCanvasElement.prototype as any).getContext = () => mockCtx;
 
-let mockGesture = 'draw';
+const mockGesture = 'draw';
 
 vi.mock('../src/hooks/useHandTracking', () => ({
   useHandTracking: () => ({ videoRef: { current: null }, gesture: mockGesture, error: null })
