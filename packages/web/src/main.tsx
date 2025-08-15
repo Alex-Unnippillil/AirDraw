@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 
@@ -15,6 +15,11 @@ import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
 import { PrivacyProvider } from './context/PrivacyContext';
 import { useHandTracking } from './hooks/useHandTracking';
 import { loadState, saveState } from './storage/indexedDb';
+import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
+import { PrivacyProvider } from './context/PrivacyContext';
+import { useHandTracking } from './hooks/useHandTracking';
+import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
+import RadialPalette from './components/RadialPalette';
 
 export function App() {
   const bus = useCommandBus();
@@ -32,6 +37,8 @@ export function App() {
   const cameraActive = !!videoRef.current && !!(videoRef.current as any).srcObject;
 
 
+  return (
+    <div>
       <DrawingCanvas
         gesture={gesture}
         color={color}
