@@ -13,6 +13,7 @@
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "package": "echo 'electron package stub'"
   },
   "devDependencies": {
@@ -22,6 +23,7 @@
     "eslint": "^8.57.0",
     "jsdom": "^26.1.0",
     "fake-indexeddb": "^6.1.0",
+    "@vitest/coverage-v8": "^0.34.6",
     "prettier": "^3.2.5",
     "react-test-renderer": "^18.3.1",
     "typescript": "^5.3.3",
