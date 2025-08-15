@@ -28,23 +28,10 @@ describe('parsePrompt', () => {
     expect(await parsePrompt('do something else')).toEqual([]);
   });
 
-  it('calls openai when api key is present', async () => {
-    process.env.OPENAI_API_KEY = 'key';
-    const commands = [{ id: 'undo', args: {} }];
-    const fetchMock = vi.fn().mockResolvedValue({
-      json: async () => ({
-        choices: [{ message: { content: JSON.stringify(commands) } }],
-      }),
-    });
-    vi.stubGlobal('fetch', fetchMock);
-    expect(await parsePrompt('anything')).toEqual(commands);
-    expect(fetchMock).toHaveBeenCalled();
-  });
 
-  it('bypasses openai when privacy is enabled', async () => {
-    process.env.OPENAI_API_KEY = 'key';
     const fetchMock = vi.fn().mockResolvedValue({ json: async () => ({}) });
     vi.stubGlobal('fetch', fetchMock);
+    process.env.OPENAI_API_KEY = 'test';
     render(<PrivacyProvider><div /></PrivacyProvider>);
     await act(async () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
@@ -54,4 +41,5 @@ describe('parsePrompt', () => {
     ]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
 });

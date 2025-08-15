@@ -3,6 +3,7 @@
  */
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { GestureFSM } from '@airdraw/core';
@@ -22,6 +23,7 @@ describe('useHandTracking', () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    cleanup();
   });
 
   it('stops media stream when stop is called', async () => {
@@ -258,6 +260,42 @@ describe('useHandTracking', () => {
     expect(bus.dispatch).toHaveBeenCalledWith({ id: 'redo', args: {} });
 
     await act(async () => { renderer.unmount(); });
+  });
+
+  it('persists strokes and color', async () => {
+    vi.resetModules();
+    vi.doUnmock('@airdraw/core');
+    const saveState = vi.fn();
+    const loadState = vi.fn().mockResolvedValue({ strokes: [], color: '#123456' });
+    vi.doMock('../src/hooks/useHandTracking', () => ({
+      useHandTracking: () => ({ videoRef: { current: null }, gesture: 'draw', error: null })
+    }));
+    vi.doMock('../src/storage/indexedDb', () => ({ saveState, loadState }));
+    const { App } = await import('../src/main');
+    const { CommandBusProvider } = await import('../src/context/CommandBusContext');
+    const core = await vi.importActual<typeof import('@airdraw/core')>('@airdraw/core');
+    const bus = new core.CommandBus<any>();
+    render(
+      React.createElement(
+        CommandBusProvider,
+        { bus },
+        React.createElement(App)
+      )
+    );
+    await waitFor(() => {
+      expect(loadState).toHaveBeenCalled();
+    });
+    const canvas = screen.getByTestId('drawing-canvas');
+    fireEvent.pointerDown(canvas, { clientX: 1, clientY: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 2, clientY: 2 });
+    fireEvent.pointerUp(canvas, { clientX: 2, clientY: 2 });
+    await waitFor(() => {
+      expect(saveState).toHaveBeenCalledTimes(1);
+    });
+    await bus.dispatch({ id: 'setColor', args: { hex: '#ff0000' } });
+    await waitFor(() => {
+      expect(saveState).toHaveBeenCalledTimes(2);
+    });
   });
 });
 
