@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GestureFSM, HandInput, Gesture } from '@airdraw/core';
 import { usePrivacy } from '../context/PrivacyContext';
+import type { Hands } from '@mediapipe/hands';
 
 type Landmark = { x: number; y: number };
 
@@ -44,7 +45,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
 
     let raf = 0;
     let active = true;
-    let hands: any;
+      let hands: Hands | null = null;
     let stream: MediaStream | null = null;
     let cleanupMouse = () => {};
 
@@ -62,7 +63,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
     const stop = () => {
       active = false;
       cancelAnimationFrame(raf);
-      hands && hands.close && hands.close();
+        hands && hands.close && hands.close();
       if (stream) {
         stream.getTracks().forEach(t => t.stop());
         stream = null;
