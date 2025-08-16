@@ -6,6 +6,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { App } from '../src/main';
 import { CommandBusProvider } from '../src/context/CommandBusContext';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 import { CommandBus } from '@airdraw/core';
 import type { AppCommands } from '../src/commands';
 import { afterEach, describe, it, expect, vi } from 'vitest';
@@ -77,4 +78,25 @@ describe('App', () => {
       );
       expect(screen.getByRole('alert').textContent).toContain('camera denied');
     });
-});
+
+    it('toggles privacy indicator with Space key', async () => {
+      const bus = new CommandBus<AppCommands>();
+      render(
+        <PrivacyProvider>
+          <CommandBusProvider bus={bus}>
+            <App />
+          </CommandBusProvider>
+        </PrivacyProvider>
+      );
+
+      expect(screen.queryByTestId('privacy-indicator')).toBeNull();
+      fireEvent.keyDown(window, { code: 'Space' });
+      await waitFor(() => {
+        expect(screen.getByTestId('privacy-indicator')).not.toBeNull();
+      });
+      fireEvent.keyDown(window, { code: 'Space' });
+      await waitFor(() => {
+        expect(screen.queryByTestId('privacy-indicator')).toBeNull();
+      });
+    });
+  });

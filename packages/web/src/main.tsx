@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import type { AppCommand } from './commands';
-import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
-import { PrivacyProvider } from './context/PrivacyContext';
-import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
-import RadialPalette from './components/RadialPalette';
+
 import { useHandTracking } from './hooks/useHandTracking';
 import { parsePrompt } from './ai/copilot';
 import { loadState, saveState } from './storage/indexedDb';
@@ -13,24 +9,7 @@ import { loadState, saveState } from './storage/indexedDb';
 export function App() {
   const bus = useCommandBus();
   const { videoRef, gesture, error } = useHandTracking();
-  const [prompt, setPrompt] = useState('');
-  const [color, setColor] = useState('Black');
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
 
-  useEffect(() => {
-    loadState<Stroke[]>('strokes').then(s => s && setStrokes(s));
-  }, []);
-
-  useEffect(() => {
-    saveState('strokes', strokes);
-  }, [strokes]);
-
-  const handleStrokeComplete = (stroke: Stroke) => {
-    setStrokes([...strokes, stroke]);
-  };
-
-  const handlePaletteSelect = (c: string) => {
-    setColor(c);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,8 +21,7 @@ export function App() {
     setPrompt('');
   };
 
-  const cameraActive =
-    !!videoRef.current && !!videoRef.current.srcObject;
+
 
   return (
     <div>
@@ -64,8 +42,9 @@ export function App() {
           onChange={e => setPrompt(e.target.value)}
         />
       </form>
-      {gesture === 'palette' && <RadialPalette onSelect={handlePaletteSelect} />}
+      {paletteOpen && <RadialPalette onSelect={handlePaletteSelect} />}
       {error && <div role="alert">{error.message}</div>}
+      {enabled && <PrivacyIndicator />}
       <pre data-testid="strokes">{JSON.stringify(strokes)}</pre>
     </div>
   );
