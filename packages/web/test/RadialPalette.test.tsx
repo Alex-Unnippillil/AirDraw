@@ -22,9 +22,14 @@ describe('RadialPalette', () => {
     fireEvent.click(screen.getByText(defaultPaletteItems[1].label));
     expect(onSelect).toHaveBeenNthCalledWith(1, defaultPaletteItems[1].command);
 
+    // Click new item
+    const lastItem = defaultPaletteItems[defaultPaletteItems.length - 1];
+    fireEvent.click(screen.getByText(lastItem.label));
+    expect(onSelect).toHaveBeenNthCalledWith(2, lastItem.command);
+
     // Keyboard selection
     const firstButton = screen.getByText(defaultPaletteItems[0].label);
     fireEvent.keyDown(firstButton, { key: 'Enter' });
-    expect(onSelect).toHaveBeenNthCalledWith(2, defaultPaletteItems[0].command);
+    expect(onSelect).toHaveBeenNthCalledWith(3, defaultPaletteItems[0].command);
   });
 });
