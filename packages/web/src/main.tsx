@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import type { Command } from '@airdraw/core';
 
 
 import { useHandTracking } from './hooks/useHandTracking';
@@ -9,6 +10,7 @@ import { loadState, saveState } from './storage/indexedDb';
 export function App() {
   const bus = useCommandBus();
   const { videoRef, gesture, error } = useHandTracking();
+
 
   };
 
@@ -23,12 +25,6 @@ export function App() {
 
 
 
-  return (
-    <div>
-      <video
-        ref={videoRef}
-        style={{ display: cameraActive ? 'block' : 'none' }}
-      />
       <DrawingCanvas
         gesture={gesture}
         color={color}
