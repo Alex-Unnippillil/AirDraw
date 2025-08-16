@@ -9,12 +9,12 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @airdraw/web",
-    "build": "npm run build -w @airdraw/web",
+    "build": "npm run build -w @airdraw/core && npm run build -w @airdraw/server && npm run build -w @airdraw/web",
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "test": "vitest run",
     "package": "echo 'electron package stub'",
-    "prepare": "husky"
+
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
@@ -30,5 +30,9 @@
     "react-test-renderer": "^18.3.1",
     "typescript": "^5.3.3",
     "vitest": "^0.34.6"
-  }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "engineStrict": true
 }
