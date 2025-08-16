@@ -6,7 +6,6 @@ import TestRenderer, { act } from 'react-test-renderer';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { GestureFSM } from '@airdraw/core';
 
 vi.mock('@mediapipe/hands', () => ({ Hands: vi.fn() }));
 vi.mock('@airdraw/core', async () => {

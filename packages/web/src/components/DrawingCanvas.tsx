@@ -64,12 +64,12 @@ export function DrawingCanvas({ gesture, color, strokes, onStrokeComplete }: Dra
     engineRef.current.addPoint(p, e.timeStamp);
   };
 
-  const endStroke = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!drawingRef.current) return;
-    const stroke = engineRef.current.end();
-    drawingRef.current = false;
-    onStrokeComplete({ color, points: stroke.points });
-  };
+    const endStroke = () => {
+      if (!drawingRef.current) return;
+      const stroke = engineRef.current.end();
+      drawingRef.current = false;
+      onStrokeComplete({ color, points: stroke.points });
+    };
 
   return (
     <canvas
