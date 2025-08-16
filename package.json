@@ -13,7 +13,6 @@
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "test": "vitest run",
-    "package": "echo 'electron package stub'",
 
   },
   "devDependencies": {
@@ -24,8 +23,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",
     "fake-indexeddb": "^6.1.0",
-    "husky": "^9.1.7",
-    "jsdom": "^26.1.0",
+
     "prettier": "^3.2.5",
     "react-test-renderer": "^18.3.1",
     "typescript": "^5.3.3",
