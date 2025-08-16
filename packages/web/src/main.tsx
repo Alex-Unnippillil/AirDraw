@@ -1,18 +1,41 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { Command } from '@airdraw/core';
 
-import type { AppCommand } from './commands';
-import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
-import { PrivacyProvider } from './context/PrivacyContext';
-import DrawingCanvas, { Stroke } from './components/DrawingCanvas';
-import RadialPalette from './components/RadialPalette';
 import { useHandTracking } from './hooks/useHandTracking';
 import { parsePrompt } from './ai/copilot';
 import { loadState, saveState } from './storage/indexedDb';
 
 export function App() {
   const bus = useCommandBus();
+  const { videoRef, gesture, error } = useHandTracking();
+  const { enabled } = usePrivacy();
+
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [redoStack, setRedoStack] = useState<Stroke[]>([]);
+  const [color, setColor] = useState('#000000');
+  const [prompt, setPrompt] = useState('');
+  const hasLoaded = useRef(false);
+  const strokesRef = useRef<Stroke[]>([]);
+  const colorRef = useRef('#000000');
+
+  useEffect(() => {
+    (async () => {
+      const state = await loadState();
+      if (state) {
+        setStrokes(state.strokes ?? []);
+        if (state.color) setColor(state.color);
+      }
+      hasLoaded.current = true;
+    })();
+  }, []);
+
+  useEffect(() => {
+    strokesRef.current = strokes;
+  }, [strokes]);
+
+  useEffect(() => {
+    colorRef.current = color;
+  }, [color]);
 
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [color, setColor] = useState('#000000');
@@ -87,6 +110,69 @@ export function App() {
     setPaletteOpen(false);
   };
 
+  useEffect(() => {
+    const offSetColor = bus.register('setColor', ({ hex }: { hex: string }) => {
+      setColor(hex);
+      if (hasLoaded.current) {
+        saveState({ strokes: strokesRef.current, color: hex });
+      }
+    });
+    const offUndo = bus.register('undo', () => {
+      setStrokes(s => {
+        if (s.length === 0) return s;
+        const copy = [...s];
+        const last = copy.pop()!;
+        setRedoStack(r => [last, ...r]);
+        if (hasLoaded.current) {
+          saveState({ strokes: copy, color: colorRef.current });
+        }
+        return copy;
+      });
+    });
+    const offRedo = bus.register('redo', () => {
+      setRedoStack(r => {
+        if (r.length === 0) return r;
+        const [stroke, ...rest] = r;
+        setStrokes(s => {
+          const next = [...s, stroke];
+          if (hasLoaded.current) {
+            saveState({ strokes: next, color: colorRef.current });
+          }
+          return next;
+        });
+        return rest;
+      });
+    });
+    return () => {
+      offSetColor();
+      offUndo();
+      offRedo();
+    };
+  }, [bus]);
+
+  useEffect(() => {
+    if (gesture === 'swipeLeft') {
+      bus.dispatch({ id: 'undo', args: {} } as AppCommand);
+    } else if (gesture === 'swipeRight') {
+      bus.dispatch({ id: 'redo', args: {} } as AppCommand);
+    }
+  }, [gesture, bus]);
+
+  const handleStrokeComplete = (stroke: Stroke) => {
+    setStrokes(s => {
+      const next = [...s, stroke];
+      if (hasLoaded.current) {
+        saveState({ strokes: next, color: colorRef.current });
+      }
+      return next;
+    });
+    setRedoStack([]);
+  };
+
+  const handlePaletteSelect = (hex: string) => {
+    setColor(hex);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cmds: AppCommand[] = await parsePrompt(prompt);
@@ -104,11 +190,6 @@ export function App() {
     }
   }, [gesture, bus]);
 
-  const cameraActive = !!videoRef.current && !!(videoRef.current as any).srcObject;
-
-  return (
-    <div>
-      <video ref={videoRef} hidden={!cameraActive} />
       <DrawingCanvas
         gesture={gesture}
         color={color}
@@ -124,6 +205,7 @@ export function App() {
       </form>
       {paletteOpen && <RadialPalette onSelect={handlePaletteSelect} />}
       {error && <div role="alert">{error.message}</div>}
+      {enabled && <PrivacyIndicator />}
       <pre data-testid="strokes">{JSON.stringify(strokes)}</pre>
     </div>
   );
@@ -141,4 +223,3 @@ if (el) {
 }
 
 export default App;
-
