@@ -1,4 +1,5 @@
-
+import { isPrivacyEnabled } from '../context/PrivacyContext';
+import type { AppCommand } from '../commands';
 
 const KEYWORDS: { pattern: RegExp; command: AppCommand }[] = [
   { pattern: /undo/i, command: { id: 'undo', args: {} } },
