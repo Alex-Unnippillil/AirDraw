@@ -2,6 +2,10 @@ import { isPrivacyEnabled } from '../context/PrivacyContext';
 import type { AppCommand } from '../commands';
 
 export async function parsePrompt(prompt: string): Promise<AppCommand[]> {
+  if (isPrivacyEnabled()) {
+    return [];
+  }
+
   const lower = prompt.toLowerCase();
 
   if (lower.includes('undo')) {
@@ -12,10 +16,6 @@ export async function parsePrompt(prompt: string): Promise<AppCommand[]> {
   }
   if (lower.includes('black')) {
     return [{ id: 'setColor', args: { hex: '#000000' } }];
-  }
-
-  if (isPrivacyEnabled()) {
-    return [];
   }
 
   if (process.env.OPENAI_API_KEY) {
