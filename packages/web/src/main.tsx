@@ -36,12 +36,12 @@ export function App() {
   }, [strokes, color]);
 
   useEffect(() => {
-    return bus.register({
-      setColor: async ({ hex }) => {
+    const unsubs = [
+      bus.register('setColor', async ({ hex }) => {
         setColor(hex);
         setRedoStack([]);
-      },
-      undo: async () => {
+      }),
+      bus.register('undo', async () => {
         setStrokes(s => {
           if (s.length === 0) return s;
           const copy = s.slice(0, -1);
@@ -49,16 +49,19 @@ export function App() {
           setRedoStack(r => [last, ...r]);
           return copy;
         });
-      },
-      redo: async () => {
+      }),
+      bus.register('redo', async () => {
         setRedoStack(r => {
           if (r.length === 0) return r;
           const [first, ...rest] = r;
           setStrokes(s => [...s, first]);
           return rest;
         });
-      },
-    });
+      })
+    ];
+    return () => {
+      for (const unsub of unsubs) unsub();
+    };
   }, [bus]);
 
   useEffect(() => {
@@ -68,10 +71,10 @@ export function App() {
       setPaletteOpen(false);
     }
     if (gesture === 'swipeLeft') {
-      void bus.dispatch({ id: 'undo' });
+      void bus.dispatch({ id: 'undo', args: {} });
     }
     if (gesture === 'swipeRight') {
-      void bus.dispatch({ id: 'redo' });
+      void bus.dispatch({ id: 'redo', args: {} });
     }
   }, [gesture, bus]);
 
@@ -81,7 +84,7 @@ export function App() {
   };
 
   const handlePaletteSelect = async (hex: string) => {
-    await bus.dispatch({ id: 'setColor', hex });
+    await bus.dispatch({ id: 'setColor', args: { hex } });
     setPaletteOpen(false);
   };
 
