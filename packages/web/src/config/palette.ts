@@ -1,8 +1,8 @@
-import { Command } from '@airdraw/core';
+import type { AppCommand } from '../commands';
 
 export interface PaletteItem {
   label: string;
-  command: Command;
+  command: AppCommand;
 }
 
 export const defaultPaletteItems: PaletteItem[] = [

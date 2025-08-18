@@ -1,15 +1,15 @@
 import React from 'react';
 import styles from './RadialPalette.module.css';
-import { defaultPaletteItems, PaletteItem } from '../config/palette';
-import { Command } from '@airdraw/core';
+import { defaultPaletteItems, type PaletteItem } from '../config/palette';
+import type { AppCommand } from '../commands';
 
 export interface RadialPaletteProps {
-  onSelect?: (command: Command) => void;
+  onSelect?: (command: AppCommand) => void | Promise<void>;
 }
 
 export function RadialPalette({ onSelect }: RadialPaletteProps) {
   const handleSelect = (item: PaletteItem) => {
-    onSelect?.(item.command);
+    void onSelect?.(item.command);
   };
 
   const handleKeyDown = (item: PaletteItem, e: React.KeyboardEvent<HTMLButtonElement>) => {

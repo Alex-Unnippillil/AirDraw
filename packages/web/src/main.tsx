@@ -36,31 +36,31 @@ export function App() {
   }, [strokes, color]);
 
   useEffect(() => {
-    const unsubs = [
-      bus.register('setColor', async ({ hex }) => {
-        setColor(hex);
-        setRedoStack([]);
-      }),
-      bus.register('undo', async () => {
-        setStrokes(s => {
-          if (s.length === 0) return s;
-          const copy = s.slice(0, -1);
-          const last = s[s.length - 1];
-          setRedoStack(r => [last, ...r]);
-          return copy;
-        });
-      }),
-      bus.register('redo', async () => {
-        setRedoStack(r => {
-          if (r.length === 0) return r;
-          const [first, ...rest] = r;
-          setStrokes(s => [...s, first]);
-          return rest;
-        });
-      })
-    ];
+    const offSet = bus.register('setColor', ({ hex }) => {
+      setColor(hex);
+      setRedoStack([]);
+    });
+    const offUndo = bus.register('undo', () => {
+      setStrokes(s => {
+        if (s.length === 0) return s;
+        const copy = s.slice(0, -1);
+        const last = s[s.length - 1];
+        setRedoStack(r => [last, ...r]);
+        return copy;
+      });
+    });
+    const offRedo = bus.register('redo', () => {
+      setRedoStack(r => {
+        if (r.length === 0) return r;
+        const [first, ...rest] = r;
+        setStrokes(s => [...s, first]);
+        return rest;
+      });
+    });
     return () => {
-      for (const unsub of unsubs) unsub();
+      offSet();
+      offUndo();
+      offRedo();
     };
   }, [bus]);
 
@@ -83,8 +83,8 @@ export function App() {
     setRedoStack([]);
   };
 
-  const handlePaletteSelect = async (hex: string) => {
-    await bus.dispatch({ id: 'setColor', args: { hex } });
+  const handlePaletteSelect = async (cmd: AppCommand) => {
+    await bus.dispatch(cmd);
     setPaletteOpen(false);
   };
 
