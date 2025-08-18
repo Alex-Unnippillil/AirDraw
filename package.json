@@ -13,7 +13,7 @@
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "vitest run",
+    "test": "vitest run"
 
   },
   "devDependencies": {
@@ -29,6 +29,6 @@
     "react-test-renderer": "^18.3.1",
     "typescript": "^5.3.3",
     "vitest": "^0.34.6"
-  },
+  }
 
 }
