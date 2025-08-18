@@ -1,9 +1,5 @@
-import { Command } from '@airdraw/core';
-
-export interface PaletteItem {
-  label: string;
-  command: Command;
-}
+import type { AppCommand } from '../commands';
+export type PaletteItem = { label: string; command: AppCommand };
 
 export const defaultPaletteItems: PaletteItem[] = [
   { label: 'Black', command: { id: 'setColor', args: { hex: '#000000' } } },
