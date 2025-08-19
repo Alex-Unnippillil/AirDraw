@@ -1,5 +1,4 @@
 import React from 'react';
-import styles from './RadialPalette.module.css';
 import { defaultPaletteItems, PaletteItem } from '../config/palette';
 import { Command } from '@airdraw/core';
 
@@ -20,7 +19,7 @@ export function RadialPalette({ onSelect }: RadialPaletteProps) {
   };
 
   return (
-    <ul className={styles.radialPalette}>
+    <ul className="radial-palette">
       {defaultPaletteItems.map(item => (
         <li key={item.label}>
           <button
