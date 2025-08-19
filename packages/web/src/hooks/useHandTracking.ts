@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { GestureFSM, HandInput, Gesture } from '@airdraw/core';
-import { usePrivacy } from '../context/PrivacyContext';
+import { usePrivacy, isPrivacyEnabled } from '../context/PrivacyContext';
 import type { Hands } from '@mediapipe/hands';
 
 type Landmark = { x: number; y: number };
@@ -36,7 +36,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
   const swipeStartRef = useRef<Landmark | null>(null);
 
   useEffect(() => {
-    if (enabled) return;
+    if (enabled || isPrivacyEnabled()) return;
     const video = videoRef.current;
     if (!video) return;
 

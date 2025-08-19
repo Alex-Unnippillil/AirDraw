@@ -1,11 +1,21 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from 'react';
 
 interface PrivacyContextValue {
   enabled: boolean;
   toggle: () => void;
 }
 
-const PrivacyContext = createContext<PrivacyContextValue>({ enabled: false, toggle: () => {} });
+const PrivacyContext = createContext<PrivacyContextValue>({
+  enabled: false,
+  toggle: () => {},
+});
 
 let currentEnabled = false;
 export function isPrivacyEnabled() {
@@ -14,27 +24,17 @@ export function isPrivacyEnabled() {
 
 export interface PrivacyProviderProps {
   children: ReactNode;
+  initialEnabled?: boolean;
 }
 
-export function PrivacyProvider({ children }: PrivacyProviderProps) {
-  const [enabled, setEnabled] = useState(false);
+export function PrivacyProvider({ children, initialEnabled = false }: PrivacyProviderProps) {
+  const [enabled, setEnabled] = useState(initialEnabled);
 
   const toggle = useCallback(() => setEnabled(e => !e), []);
 
   useEffect(() => {
     currentEnabled = enabled;
   }, [enabled]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        toggle();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [toggle]);
 
   return (
     <PrivacyContext.Provider value={{ enabled, toggle }}>

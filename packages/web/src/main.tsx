@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
 import RadialPalette from './components/RadialPalette';
 import PrivacyIndicator from './components/PrivacyIndicator';
+import PrivacyToggle from './components/PrivacyToggle';
 import './app.css';
 import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
 import { PrivacyProvider, usePrivacy } from './context/PrivacyContext';
@@ -117,6 +118,7 @@ export function App() {
       {paletteOpen && <RadialPalette onSelect={handlePaletteSelect} />}
       {error && <div role="alert">{error.message}</div>}
       {enabled && <PrivacyIndicator />}
+      <PrivacyToggle />
       <pre data-testid="strokes">{JSON.stringify(strokes)}</pre>
     </div>
   );

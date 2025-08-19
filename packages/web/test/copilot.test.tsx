@@ -4,9 +4,10 @@
 
 import React from 'react';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, cleanup, act } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent } from '@testing-library/react';
 import { parsePrompt } from '../src/ai/copilot';
 import { PrivacyProvider, isPrivacyEnabled } from '../src/context/PrivacyContext';
+import PrivacyToggle from '../src/components/PrivacyToggle';
 
 describe('parsePrompt', () => {
   beforeEach(() => {
@@ -36,10 +37,8 @@ describe('parsePrompt', () => {
     const fetchMock = vi.fn().mockResolvedValue({ json: async () => ({}) });
     vi.stubGlobal('fetch', fetchMock);
     process.env.OPENAI_API_KEY = 'test';
-    render(<PrivacyProvider><div /></PrivacyProvider>);
-    await act(async () => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
-    });
+    render(<PrivacyProvider><PrivacyToggle /></PrivacyProvider>);
+    fireEvent.click(screen.getByTestId('privacy-toggle'));
     expect(await parsePrompt('do something else')).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });

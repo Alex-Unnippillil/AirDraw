@@ -17,12 +17,33 @@ import { Hands } from '@mediapipe/hands';
 const HandsMock = Hands as unknown as any;
 
 import { useHandTracking } from '../src/hooks/useHandTracking';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 
 describe('useHandTracking', () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
     cleanup();
+  });
+
+  it('does not start tracking when privacy mode is enabled', () => {
+    const getUserMedia = vi.fn();
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+
+    function TestComponent() {
+      useHandTracking();
+      return null;
+    }
+
+    render(
+      React.createElement(
+        PrivacyProvider,
+        { initialEnabled: true },
+        React.createElement(TestComponent)
+      )
+    );
+
+    expect(getUserMedia).not.toHaveBeenCalled();
   });
 
   it('stops media stream when stop is called', async () => {

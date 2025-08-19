@@ -79,7 +79,7 @@ describe('App', () => {
       expect(screen.getByRole('alert').textContent).toContain('camera denied');
     });
 
-    it('toggles privacy indicator with Space key', async () => {
+    it('toggles privacy indicator with button', async () => {
       const bus = new CommandBus<AppCommands>();
       render(
         <PrivacyProvider>
@@ -90,11 +90,11 @@ describe('App', () => {
       );
 
       expect(screen.queryByTestId('privacy-indicator')).toBeNull();
-      fireEvent.keyDown(window, { code: 'Space' });
+      fireEvent.click(screen.getByTestId('privacy-toggle'));
       await waitFor(() => {
         expect(screen.getByTestId('privacy-indicator')).not.toBeNull();
       });
-      fireEvent.keyDown(window, { code: 'Space' });
+      fireEvent.click(screen.getByTestId('privacy-toggle'));
       await waitFor(() => {
         expect(screen.queryByTestId('privacy-indicator')).toBeNull();
       });
