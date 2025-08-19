@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import DrawingCanvas, { type Stroke } from './components/DrawingCanvas';
 import RadialPalette from './components/RadialPalette';
 import PrivacyIndicator from './components/PrivacyIndicator';
+import './app.css';
 import { CommandBusProvider, useCommandBus } from './context/CommandBusContext';
 import { PrivacyProvider, usePrivacy } from './context/PrivacyContext';
 import type { AppCommand } from './commands';
@@ -97,22 +98,22 @@ export function App() {
     setPrompt('');
   };
 
-  return (
-    <div>
-      <video ref={videoRef} style={{ display: 'none' }} />
-      <DrawingCanvas
-        gesture={gesture}
-        color={color}
-        strokes={strokes}
-        onStrokeComplete={handleStrokeComplete}
-      />
-      <form onSubmit={handleSubmit}>
-        <input
-          placeholder="prompt"
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
+    return (
+      <div>
+        <video ref={videoRef} className="hidden" />
+        <DrawingCanvas
+          gesture={gesture}
+          color={color}
+          strokes={strokes}
+          onStrokeComplete={handleStrokeComplete}
         />
-      </form>
+        <form onSubmit={handleSubmit} className="prompt-form">
+          <input
+            placeholder="prompt"
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+          />
+        </form>
       {paletteOpen && <RadialPalette onSelect={handlePaletteSelect} />}
       {error && <div role="alert">{error.message}</div>}
       {enabled && <PrivacyIndicator />}

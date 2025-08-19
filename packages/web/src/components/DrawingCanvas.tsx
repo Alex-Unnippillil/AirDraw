@@ -21,6 +21,18 @@ export function DrawingCanvas({ gesture, color, strokes, onStrokeComplete }: Dra
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     let ctx: CanvasRenderingContext2D | null = null;
     try {
       ctx = canvas.getContext('2d');
@@ -76,6 +88,7 @@ export function DrawingCanvas({ gesture, color, strokes, onStrokeComplete }: Dra
       ref={canvasRef}
       width={500}
       height={500}
+      className="drawing-canvas"
       data-testid="drawing-canvas"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
