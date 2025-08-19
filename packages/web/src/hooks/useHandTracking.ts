@@ -1,25 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { GestureFSM, HandInput, Gesture } from '@airdraw/core';
+import { GestureFSM, Gesture, Landmark } from '@airdraw/core';
 import { usePrivacy } from '../context/PrivacyContext';
 import type { Hands } from '@mediapipe/hands';
 
-type Landmark = { x: number; y: number };
-
-const dist = (a: Landmark, b: Landmark) => Math.hypot(a.x - b.x, a.y - b.y);
-
-function calcPinch(lm: Landmark[]): number {
-  const thumb = lm[4];
-  const index = lm[8];
-  const scale = dist(lm[0], lm[5]) || 1;
-  return Math.max(0, Math.min(1, 1 - dist(thumb, index) / scale));
-}
-
-function countFingers(lm: Landmark[]): number {
-  const up = (tip: number, pip: number) => (lm[tip].y < lm[pip].y ? 1 : 0);
-  let fingers = up(8, 6) + up(12, 10) + up(16, 14) + up(20, 18);
-  if (lm[4].x < lm[3].x) fingers++;
-  return fingers;
-}
 
 export interface HandTrackingConfig {
   baseUrl?: string;
@@ -28,12 +11,12 @@ export interface HandTrackingConfig {
 export function useHandTracking(config?: HandTrackingConfig) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [gesture, setGesture] = useState<Gesture>('idle');
+  const [keypoints, setKeypoints] = useState<Landmark[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const { enabled } = usePrivacy();
 
   const fsmRef = useRef(new GestureFSM());
   const stopRef = useRef<() => void>(() => {});
-  const swipeStartRef = useRef<Landmark | null>(null);
 
   useEffect(() => {
     if (enabled) return;
@@ -45,7 +28,7 @@ export function useHandTracking(config?: HandTrackingConfig) {
 
     let raf = 0;
     let active = true;
-      let hands: Hands | null = null;
+    let hands: Hands | null = null;
     let stream: MediaStream | null = null;
     let cleanupMouse = () => {};
 
@@ -104,30 +87,13 @@ export function useHandTracking(config?: HandTrackingConfig) {
 
         hands.onResults(results => {
           if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-            setGesture(fsmRef.current.update({ pinch: 0, fingers: 0 }));
+            setKeypoints(null);
+            setGesture(fsmRef.current.update(null));
             return;
           }
           const lm = results.multiHandLandmarks[0] as unknown as Landmark[];
-          const pinch = calcPinch(lm);
-          const fingers = countFingers(lm);
-          let swipe: 'left' | 'right' | null = null;
-          if (fingers === 2 && pinch < 0.5) {
-            const index = lm[8];
-            if (!swipeStartRef.current) {
-              swipeStartRef.current = index;
-            } else {
-              const dx = index.x - swipeStartRef.current.x;
-              if (Math.abs(dx) > 0.3) {
-                swipe = dx > 0 ? 'right' : 'left';
-                swipeStartRef.current = null;
-              }
-            }
-          } else {
-            swipeStartRef.current = null;
-          }
-
-          const input: HandInput = { pinch, fingers, swipe };
-          const g = fsmRef.current.update(input);
+          setKeypoints(lm);
+          const g = fsmRef.current.update(lm);
           setGesture(g);
         });
 
@@ -152,6 +118,6 @@ export function useHandTracking(config?: HandTrackingConfig) {
     return stop;
   }, [config?.baseUrl, enabled]);
 
-  return { videoRef, gesture, error, stop: stopRef.current };
+  return { videoRef, keypoints, gesture, error, stop: stopRef.current };
 }
 

@@ -12,6 +12,27 @@ export interface HandInput {
   swipe?: 'left' | 'right' | null;
 }
 
+export interface Landmark {
+  x: number;
+  y: number;
+}
+
+const dist = (a: Landmark, b: Landmark) => Math.hypot(a.x - b.x, a.y - b.y);
+
+function calcPinch(lm: Landmark[]): number {
+  const thumb = lm[4];
+  const index = lm[8];
+  const scale = dist(lm[0], lm[5]) || 1;
+  return Math.max(0, Math.min(1, 1 - dist(thumb, index) / scale));
+}
+
+function countFingers(lm: Landmark[]): number {
+  const up = (tip: number, pip: number) => (lm[tip].y < lm[pip].y ? 1 : 0);
+  let fingers = up(8, 6) + up(12, 10) + up(16, 14) + up(20, 18);
+  if (lm[4].x < lm[3].x) fingers++;
+  return fingers;
+}
+
 type Listener<Args extends unknown[]> = (...args: Args) => void;
 
 interface Emitter<Events extends Record<string, unknown[]>> {
@@ -50,6 +71,7 @@ export class GestureFSM {
   private offMap = new Map<Listener<[Gesture]>, () => void>();
   private opts: Options;
   public state: Gesture = 'idle';
+  private swipeStart: Landmark | null = null;
 
   constructor(opts: Partial<Options & { pinchThreshold: number; fingerThreshold: number }> = {}) {
     const drawPinch = opts.drawPinch ?? opts.pinchThreshold ?? 0.8;
@@ -76,10 +98,11 @@ export class GestureFSM {
 
   reset() {
     this.state = 'idle';
+    this.swipeStart = null;
     this.emitter.emit('change', this.state);
   }
 
-  update(input: HandInput): Gesture {
+  private transition(input: HandInput): Gesture {
     let next: Gesture;
 
     if (input.swipe === 'left') {
@@ -101,6 +124,34 @@ export class GestureFSM {
       this.emitter.emit('change', next);
     }
     return this.state;
+  }
+
+  update(input: HandInput | Landmark[] | null = null): Gesture {
+    if (Array.isArray(input)) {
+      const pinch = calcPinch(input);
+      const fingers = countFingers(input);
+      let swipe: 'left' | 'right' | null = null;
+      if (fingers === 2 && pinch < 0.5) {
+        const index = input[8];
+        if (!this.swipeStart) {
+          this.swipeStart = index;
+        } else {
+          const dx = index.x - this.swipeStart.x;
+          if (Math.abs(dx) > 0.3) {
+            swipe = dx > 0 ? 'right' : 'left';
+            this.swipeStart = null;
+          }
+        }
+      } else {
+        this.swipeStart = null;
+      }
+      return this.transition({ pinch, fingers, swipe });
+    }
+
+    if (!input) {
+      return this.transition({ pinch: 0, fingers: 0, swipe: null });
+    }
+    return this.transition(input);
   }
 }
 
