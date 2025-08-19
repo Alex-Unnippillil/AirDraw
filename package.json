@@ -13,8 +13,7 @@
     "lint": "eslint . --ext ts,tsx,js,jsx",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "vitest run",
-
+    "test": "vitest run"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
@@ -24,11 +23,9 @@
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",
     "fake-indexeddb": "^6.1.0",
-
     "prettier": "^3.2.5",
     "react-test-renderer": "^18.3.1",
     "typescript": "^5.3.3",
     "vitest": "^0.34.6"
-  },
-
+  }
 }
