@@ -83,8 +83,8 @@ export function App() {
     setRedoStack([]);
   };
 
-  const handlePaletteSelect = async (hex: string) => {
-    await bus.dispatch({ id: 'setColor', args: { hex } });
+  const handlePaletteSelect = async (cmd: AppCommand) => {
+    await bus.dispatch(cmd);
     setPaletteOpen(false);
   };
 
