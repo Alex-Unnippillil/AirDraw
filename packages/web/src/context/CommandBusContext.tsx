@@ -2,6 +2,7 @@ import React, { createContext, useContext, useRef, type ReactNode } from 'react'
 import { CommandBus } from '@airdraw/core';
 import type { AppCommands } from '../commands';
 
+/** Context providing a CommandBus instance for the app */
 export const CommandBusContext = createContext<CommandBus<AppCommands> | null>(null);
 
 export interface CommandBusProviderProps {

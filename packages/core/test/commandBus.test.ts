@@ -151,4 +151,52 @@ describe('CommandBus', () => {
     await expect(bus.redo()).rejects.toThrow();
     expect(count).toBe(0);
   });
+
+  it('ignores unregistered commands and empty stacks', async () => {
+    type Cmds = { inc: {} };
+    const bus = new CommandBus<Cmds>();
+    const count = 0;
+    // dispatching without registering should do nothing
+    await bus.dispatch({ id: 'inc', args: {} });
+    expect(count).toBe(0);
+    // undo/redo with empty stacks should also do nothing
+    await bus.undo();
+    await bus.redo();
+    expect(count).toBe(0);
+  });
+
+  it('clears redo stack on new dispatch after undo', async () => {
+    type Cmds = { inc: {}; dec: {} };
+    const bus = new CommandBus<Cmds>();
+    let count = 0;
+    bus.register(
+      'inc',
+      () => {
+        count++;
+      },
+      () => {
+        count--;
+      }
+    );
+    bus.register(
+      'dec',
+      () => {
+        count--;
+      },
+      () => {
+        count++;
+      }
+    );
+    await bus.dispatch({ id: 'inc', args: {} });
+    expect(count).toBe(1);
+    await bus.undo();
+    expect(count).toBe(0);
+    await bus.dispatch({ id: 'dec', args: {} });
+    expect(count).toBe(-1);
+    await bus.redo();
+    // redo stack should be cleared after dispatching 'dec'
+    expect(count).toBe(-1);
+    await bus.undo();
+    expect(count).toBe(0);
+  });
 });

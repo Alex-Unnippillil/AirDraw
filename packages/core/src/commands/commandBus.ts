@@ -11,16 +11,16 @@ export type CommandOf<M extends Record<string, unknown>> = {
 
 export class CommandBus<Cmds extends Record<string, unknown>> {
   private handlers = new Map<
-    string,
+    keyof Cmds & string,
     { do: CommandHandler<unknown>; undo?: CommandHandler<unknown> }
   >();
-  private undoStack: Array<Command<keyof Cmds & string, unknown>> = [];
-  private redoStack: Array<Command<keyof Cmds & string, unknown>> = [];
+  private undoStack: Array<Command<keyof Cmds & string, Cmds[keyof Cmds]>> = [];
+  private redoStack: Array<Command<keyof Cmds & string, Cmds[keyof Cmds]>> = [];
 
-  register<ID extends string, Args>(
+  register<ID extends keyof Cmds & string>(
     id: ID,
-    handler: CommandHandler<Args>,
-    undo?: CommandHandler<Args>
+    handler: CommandHandler<Cmds[ID]>,
+    undo?: CommandHandler<Cmds[ID]>
   ) {
     this.handlers.set(id, {
       do: handler as CommandHandler<unknown>,
@@ -32,17 +32,19 @@ export class CommandBus<Cmds extends Record<string, unknown>> {
   }
 
   async dispatch<ID extends keyof Cmds>(cmd: Command<ID & string, Cmds[ID]>) {
-    const entry = this.handlers.get(cmd.id as string);
+    const entry = this.handlers.get(cmd.id);
     if (!entry) return;
     await entry.do(cmd.args);
-    this.undoStack.push(cmd as Command<keyof Cmds & string, unknown>);
+    this.undoStack.push(
+      cmd as Command<keyof Cmds & string, Cmds[keyof Cmds]>
+    );
     this.redoStack = [];
   }
 
   async undo() {
     const cmd = this.undoStack.pop();
     if (!cmd) return;
-    const entry = this.handlers.get(String(cmd.id));
+    const entry = this.handlers.get(cmd.id);
     const handler = entry?.undo;
     if (!handler) {
       // Restore state when there is no inverse handler
@@ -61,7 +63,7 @@ export class CommandBus<Cmds extends Record<string, unknown>> {
   async redo() {
     const cmd = this.redoStack.pop();
     if (!cmd) return;
-    const entry = this.handlers.get(String(cmd.id));
+    const entry = this.handlers.get(cmd.id);
     const handler = entry?.do;
     if (!handler) {
       // Restore state if redo handler is missing
