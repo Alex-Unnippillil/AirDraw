@@ -1,5 +1,13 @@
+import { CommandBus } from '@airdraw/core';
 import { isPrivacyEnabled } from '../context/PrivacyContext';
-import type { AppCommand } from '../commands';
+import type { AppCommand, AppCommands } from '../commands';
+
+// keyword mapping used when the LLM is unavailable
+const PROMPT_MAP: Record<string, AppCommand[]> = {
+  undo: [{ id: 'undo', args: {} }],
+  red: [{ id: 'setColor', args: { hex: '#ff0000' } }],
+  black: [{ id: 'setColor', args: { hex: '#000000' } }],
+};
 
 export async function parsePrompt(prompt: string): Promise<AppCommand[]> {
   if (isPrivacyEnabled()) {
@@ -7,15 +15,10 @@ export async function parsePrompt(prompt: string): Promise<AppCommand[]> {
   }
 
   const lower = prompt.toLowerCase();
-
-  if (lower.includes('undo')) {
-    return [{ id: 'undo', args: {} }];
-  }
-  if (lower.includes('red')) {
-    return [{ id: 'setColor', args: { hex: '#ff0000' } }];
-  }
-  if (lower.includes('black')) {
-    return [{ id: 'setColor', args: { hex: '#000000' } }];
+  for (const [key, cmds] of Object.entries(PROMPT_MAP)) {
+    if (lower.includes(key)) {
+      return cmds;
+    }
   }
 
   if (process.env.OPENAI_API_KEY) {
@@ -59,3 +62,21 @@ export async function parsePrompt(prompt: string): Promise<AppCommand[]> {
 }
 
 export default parsePrompt;
+
+export interface RunPromptOptions {
+  dryRun?: boolean;
+}
+
+export async function runPrompt(
+  bus: CommandBus<AppCommands>,
+  prompt: string,
+  opts: RunPromptOptions = {}
+): Promise<AppCommand[]> {
+  const cmds = await parsePrompt(prompt);
+  if (!opts.dryRun) {
+    for (const cmd of cmds) {
+      await bus.dispatch(cmd);
+    }
+  }
+  return cmds;
+}
